@@ -1,11 +1,10 @@
-import {View, Text, TouchableOpacity, Image, StyleSheet} from 'react-native';
+import {View, Text, TouchableOpacity, Image, StyleSheet, Platform} from 'react-native';
 import React from 'react';
 import {NotificationBing} from 'iconsax-react-native';
 import {useFetchProfile} from '@/hooks/api/queries/settings';
 
 const Header = () => {
   const {data: userProfile} = useFetchProfile();
-
   const profile = userProfile?.data;
 
   return (
@@ -32,12 +31,25 @@ const Header = () => {
 const styles = StyleSheet.create({
   headerSection: {
     backgroundColor: '#F8FFFB',
+    borderBottomColor: '#F2F4F7',
     padding: 16,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    borderBottomWidth: 1,
-    borderBottomColor: '#F9FAFB',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: {
+          width: 0,
+          height: 2,
+        },
+        shadowOpacity: 0.05,
+        shadowRadius: 1,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
   },
 
   details: {
@@ -57,4 +69,5 @@ const styles = StyleSheet.create({
     fontWeight: '400',
   },
 });
-export  {Header};
+
+export {Header};
