@@ -1,21 +1,25 @@
 {
   "expo": {
-    "name": "nso-mobile-expo",
-    "slug": "nso-mobile-expo",
+    "name": "chprbn",
+    "slug": "chprbn",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
-    "scheme": "myapp",
+    "icon": "./assets/images/app-icon.png",
+    "scheme": "chprbn",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.zijela.chprbn"
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "foregroundImage": "./assets/images/android-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "additionalRepositories": ["https://www.jitpack.io"],
+      "permissions": [],
+      "package": "com.zijela.chprbn"
     },
     "web": {
       "bundler": "metro",

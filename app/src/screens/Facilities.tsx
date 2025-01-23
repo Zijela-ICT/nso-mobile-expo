@@ -24,6 +24,8 @@ const { width, height } = Dimensions.get('window');
 const CARD_WIDTH = (width - 48) / 2;
 const INITIAL_ZOOM = 15;
 
+
+const defaultCoordinate =  {"latitude": 37.4220936, "latitudeDelta": 0.010986328125, "longitude": -122.083922, "longitudeDelta": 0.010986328125}
 const Facilities = () => {
   const mapRef = useRef<MapView>(null);
   const { data, isLoading } = useFetchFacilities();
@@ -101,6 +103,8 @@ const Facilities = () => {
     }
   };
 
+  console.log("location", userLocation)
+
   useEffect(() => {
     requestLocationPermission();
 
@@ -174,6 +178,8 @@ const Facilities = () => {
     );
   }
 
+  console.log("user locatio")
+
   return (
     <View style={styles.container}>
       <MapView
@@ -190,12 +196,15 @@ const Facilities = () => {
         pitchEnabled={true}
         toolbarEnabled={false}
         loadingEnabled={true}
-        region={userLocation || {
-          latitude: 0,
-          longitude: 0,
-          latitudeDelta: 360 / Math.pow(2, INITIAL_ZOOM),
-          longitudeDelta: 360 / Math.pow(2, INITIAL_ZOOM),
-        }}
+        region={
+        //   userLocation || {
+        //   latitude: 0,
+        //   longitude: 0,
+        //   latitudeDelta: 360 / Math.pow(2, INITIAL_ZOOM),
+        //   longitudeDelta: 360 / Math.pow(2, INITIAL_ZOOM),
+        // }
+        defaultCoordinate
+      }
       >
         {nearbyFacilities.map((facility) => (
           <Marker
@@ -260,6 +269,7 @@ const Facilities = () => {
                 <Text style={styles.cardTitle} numberOfLines={1}>{facility.name}</Text>
                 <Text style={styles.cardSubtitle} numberOfLines={1}>{facility.type}</Text>
                 <Text style={styles.cardLocation} numberOfLines={1}>{facility.location}</Text>
+                <Text style={styles.cardLocation} numberOfLines={1}>{facility.contact}</Text>
               </TouchableOpacity>
             ))}
           </View>

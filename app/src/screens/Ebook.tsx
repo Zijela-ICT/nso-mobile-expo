@@ -18,7 +18,7 @@ const App: React.FC = () => {
   // const book = demoData.book;
 
   const book = data?.book as Book;
-  const bookData = book.content as Chapter[];
+  const bookData = book?.content as Chapter[];
   const flattenedPages = bookData ? flattenPages(bookData) : [];
   const [currentPageIndex, setCurrentPageIndex] = React.useState(0);
   const [searchQuery, setSearchQuery] = React.useState(''); // State for search query
