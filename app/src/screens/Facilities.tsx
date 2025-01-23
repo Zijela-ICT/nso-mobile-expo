@@ -103,7 +103,6 @@ const Facilities = () => {
     }
   };
 
-  console.log("location", userLocation)
 
   useEffect(() => {
     requestLocationPermission();
@@ -178,7 +177,6 @@ const Facilities = () => {
     );
   }
 
-  console.log("user locatio")
 
   return (
     <View style={styles.container}>
@@ -252,6 +250,7 @@ const Facilities = () => {
             maximumValue={100}
             value={radius}
             onValueChange={setRadius}
+            onSlidingComplete={(value: number) => setRadius(Math.round(value))}
             minimumTrackTintColor="#1a73e8"
             maximumTrackTintColor="#000000"
           />
