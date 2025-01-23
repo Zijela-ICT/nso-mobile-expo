@@ -23,6 +23,7 @@ import {showToast} from '@/utils/toast';
 import {useFetchProfile} from '@/hooks/api/queries/settings';
 import Feather from '@expo/vector-icons/Feather';
 import { BiometricService } from '@/utils/biometric';
+import Ionicons from '@expo/vector-icons/Ionicons';
 
 type LoginNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -182,7 +183,7 @@ const Login = () => {
               style={styles.biometricButton}
               onPress={handleBiometricLogin}
               disabled={isAuthenticating}>
-              <Feather name="fingerprint" size={24} color="white" />
+              <Ionicons name="finger-print" size={24} color="white" />
               <Text style={styles.biometricText}>
                 {isAuthenticating
                   ? 'Authenticating...'

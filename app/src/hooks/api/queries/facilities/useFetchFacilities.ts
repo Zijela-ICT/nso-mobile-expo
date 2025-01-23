@@ -8,6 +8,7 @@ export type FacilitiesDataResponse = {
   type: string;
   location: string;
   status: string | null;
+  careLevel: "primary" | "secondary" | "tertiary";
   longitude: string;
   latitude: string;
   createdAt: string;

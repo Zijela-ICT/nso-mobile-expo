@@ -234,6 +234,7 @@ const SettingsScreen = () => {
     disableBiometric,
   } = useAuth();
 
+
   // const {
   //   isEnabled: pushNotificationsEnabled,
   //   isLoading: isCheckingPermissions,
@@ -282,6 +283,7 @@ const SettingsScreen = () => {
       setShowBiometricModal(true);
     } else {
       await disableBiometric();
+      setBiometricEnabled(false);
       showToast('Biometric authentication disabled', 'success');
     }
   };
@@ -317,6 +319,7 @@ const SettingsScreen = () => {
 
       if (success) {
         setShowBiometricModal(false);
+        setBiometricEnabled(true);
         showToast('Biometric authentication enabled', 'success');
       }
     } catch (error) {
