@@ -20,10 +20,7 @@ const App: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Header />
-      <TouchableOpacity style={styles.refreshButton} onPress={()=>refetch()}>
-        <Icon name="refresh-outline" size={24} color="black" />
-      </TouchableOpacity>
+      <Header showRefetch onPressRefetch={refetch}/>
       {book && (
         <TableOfContents
           book={book}
