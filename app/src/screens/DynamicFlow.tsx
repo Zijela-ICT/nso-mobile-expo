@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -7,17 +7,20 @@ import {
   ScrollView,
   SafeAreaView,
   Alert,
-} from 'react-native';
-import {ArrowLeft, ChevronRight} from 'lucide-react-native';
-import {useNavigation} from '@react-navigation/native';
-import {NativeStackNavigationProp} from '@react-navigation/native-stack';
-import {HomeStackParamList} from '../stacks/HomeStack';
-import {CustomButton, Header} from '@/components';
-import {useCreateDecision} from '@/hooks/api/mutations/user';
+  Modal,
+  TextInput
+} from "react-native";
+import { ArrowLeft, ChevronRight } from "lucide-react-native";
+import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { HomeStackParamList } from "../stacks/HomeStack";
+import { CustomButton, Header } from "@/components";
+import { useCreateDecision } from "@/hooks/api/mutations/user";
+import { ActivityIndicator } from "react-native";
 
 type NavigationProp = NativeStackNavigationProp<
   HomeStackParamList,
-  'DynamicFlow'
+  "DynamicFlow"
 >;
 
 interface Chapter {
@@ -75,22 +78,22 @@ interface UserSelections {
   subSubChapterTitle?: string;
   examResponses: {
     question: string;
-    response: 'yes' | 'no';
+    response: "yes" | "no";
   }[];
   matchingDiagnoses: Case[];
 }
 
 type ViewState =
-  | 'subChapters'
-  | 'subSubChapters'
-  | 'history'
-  | 'examinationActions'
-  | 'examination'
-  | 'diagnosis';
+  | "subChapters"
+  | "subSubChapters"
+  | "history"
+  | "examinationActions"
+  | "examination"
+  | "diagnosis";
 
 interface ExaminationResponse {
   question: string;
-  response: 'yes' | 'no' | null;
+  response: "yes" | "no" | null;
 }
 
 type DynamicFlowProps = {
@@ -102,40 +105,155 @@ type DynamicFlowProps = {
   };
 };
 
-const DynamicFlow = ({route}: DynamicFlowProps) => {
-  const {chapter} = route.params;
+interface ReasonModalProps {
+  visible: boolean;
+  isLoading: boolean;
+  onClose: () => void;
+  onSubmit: (data: {
+    reason: string;
+    patientId?: string;
+    patientAge?: string;
+  }) => void;
+}
+
+const ReasonModal = ({ visible, onClose, onSubmit, isLoading }: ReasonModalProps) => {
+  const [reason, setReason] = useState("");
+  const [patientId, setPatientId] = useState("");
+  const [patientAge, setPatientAge] = useState("");
+
+  const handleSubmit = () => {
+    if (!reason) {
+      Alert.alert("Error", "Please select a reason");
+      return;
+    }
+
+    if (reason === "Patient Care" && (!patientId || !patientAge)) {
+      Alert.alert("Error", "Please fill in all patient details");
+      return;
+    }
+
+    onSubmit({
+      reason,
+      ...(reason === "Patient Care" && {
+        patientId,
+        patientAge
+      })
+    });
+  };
+
+  return (
+    <Modal visible={visible} transparent animationType="fade">
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContent}>
+          <Text style={styles.modalTitle}>Submit Decision</Text>
+          <Text style={styles.modalDescription}>
+            Please provide additional details
+          </Text>
+
+          <View style={styles.inputContainer}>
+            <Text style={styles.inputLabel}>Reason for Usage</Text>
+            <TouchableOpacity
+              style={styles.pickerContainer}
+              onPress={() => {
+                Alert.alert(
+                  "Select Reason",
+                  "",
+                  [
+                    { text: "Tutoring", onPress: () => setReason("Tutoring") },
+                    {
+                      text: "Self-study",
+                      onPress: () => setReason("Self-study")
+                    },
+                    {
+                      text: "Patient Care",
+                      onPress: () => setReason("Patient Care")
+                    },
+                    { text: "Cancel", style: "cancel" }
+                  ],
+                  { cancelable: true }
+                );
+              }}>
+              <Text style={styles.pickerText}>{reason || "Select reason"}</Text>
+              <ChevronRight size={20} color="#666" />
+            </TouchableOpacity>
+          </View>
+
+          {reason === "Patient Care" && (
+            <>
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>Patient ID</Text>
+                <TextInput
+                  style={styles.input}
+                  value={patientId}
+                  onChangeText={setPatientId}
+                  placeholder="Enter patient ID"
+                />
+              </View>
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>Patient Age</Text>
+                <TextInput
+                  style={styles.input}
+                  value={patientAge}
+                  onChangeText={setPatientAge}
+                  keyboardType="numeric"
+                  placeholder="Enter patient age"
+                />
+              </View>
+            </>
+          )}
+
+          <View style={styles.modalButtons}>
+            <TouchableOpacity style={styles.cancelButton} onPress={onClose}>
+              <Text style={styles.cancelButtonText}>Cancel</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.doneButton} onPress={handleSubmit}>
+              {
+                isLoading ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.doneButtonText}>Submit</Text>
+              }
+              
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+};
+
+const DynamicFlow = ({ route }: DynamicFlowProps) => {
+  const { chapter } = route.params;
   const navigation = useNavigation<NavigationProp>();
   const createDecision = useCreateDecision();
 
-  const [currentView, setCurrentView] = useState<ViewState>('subChapters');
+  const [currentView, setCurrentView] = useState<ViewState>("subChapters");
   const [selectedChapter] = useState<Chapter>(chapter);
   const [selectedSubChapter, setSelectedSubChapter] =
     useState<SubChapter | null>(null);
   const [selectedSubSubChapter, setSelectedSubSubChapter] =
     useState<SubSubChapter | null>(null);
   const [navigationPath, setNavigationPath] = useState<string[]>([
-    chapter.chapter,
+    chapter.chapter
   ]);
   const [examinationResponses, setExaminationResponses] = useState<
     ExaminationResponse[]
   >([]);
   const [expandedDiagnosis, setExpandedDiagnosis] = useState<number | null>(
-    null,
+    null
   );
   const [userSelections, setUserSelections] = useState<UserSelections>({
     chapterTitle: chapter.chapter,
-    subChapterTitle: '',
-    subSubChapterTitle: '',
+    subChapterTitle: "",
+    subSubChapterTitle: "",
     examResponses: [],
-    matchingDiagnoses: [],
+    matchingDiagnoses: []
   });
+  const [showReasonModal, setShowReasonModal] = useState(false);
 
   useEffect(() => {
-    if (currentView === 'diagnosis') {
+    if (currentView === "diagnosis") {
       const matchingCases = getMatchingCases();
-      setUserSelections(prev => ({
+      setUserSelections((prev) => ({
         ...prev,
-        matchingDiagnoses: matchingCases,
+        matchingDiagnoses: matchingCases
       }));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -145,147 +263,148 @@ const DynamicFlow = ({route}: DynamicFlowProps) => {
     return {
       ...userSelections,
       examResponses: userSelections.examResponses.filter(
-        r => r.response === 'yes',
-      ),
+        (r) => r.response === "yes"
+      )
     };
   };
 
   const handleSubChapterSelect = (subChapter: SubChapter) => {
     setSelectedSubChapter(subChapter);
-    setUserSelections(prev => ({
+    setUserSelections((prev) => ({
       ...prev,
-      subChapterTitle: subChapter.subChapterTitle,
+      subChapterTitle: subChapter.subChapterTitle
     }));
 
     if (subChapter.hasDecisions) {
-      setCurrentView('history');
+      setCurrentView("history");
     } else {
-      setCurrentView('subSubChapters');
+      setCurrentView("subSubChapters");
     }
 
-    setNavigationPath(prev => [...prev, subChapter.subChapterTitle]);
+    setNavigationPath((prev) => [...prev, subChapter.subChapterTitle]);
   };
 
   const handleSubSubChapterSelect = (subSubChapter: SubSubChapter) => {
     if (!subSubChapter) {
-      console.error('Error: subSubChapter is null or undefined');
+      console.error("Error: subSubChapter is null or undefined");
       return;
     }
 
     setSelectedSubSubChapter(subSubChapter);
-    setUserSelections(prev => ({
+    setUserSelections((prev) => ({
       ...prev,
-      subSubChapterTitle: subSubChapter.subSubChapterTitle,
+      subSubChapterTitle: subSubChapter.subSubChapterTitle
     }));
 
     // Changed this part - always go to history for sub-sub-chapters
-    setCurrentView('history');
-    setNavigationPath(prev => [...prev, subSubChapter.subSubChapterTitle]);
+    setCurrentView("history");
+    setNavigationPath((prev) => [...prev, subSubChapter.subSubChapterTitle]);
   };
 
   const handleExaminationResponse = (
     question: string,
-    response: 'yes' | 'no',
+    response: "yes" | "no"
   ) => {
-    setExaminationResponses(prev => {
-      const existing = prev.find(r => r.question === question);
+    setExaminationResponses((prev) => {
+      const existing = prev.find((r) => r.question === question);
       if (existing) {
-        return prev.map(r => (r.question === question ? {...r, response} : r));
+        return prev.map((r) =>
+          r.question === question ? { ...r, response } : r
+        );
       }
-      return [...prev, {question, response}];
+      return [...prev, { question, response }];
     });
 
-    if (response === 'yes') {
-      setUserSelections(prev => ({
+    if (response === "yes") {
+      setUserSelections((prev) => ({
         ...prev,
         examResponses: [
-          ...prev.examResponses.filter(r => r.question !== question),
-          {question, response},
-        ],
+          ...prev.examResponses.filter((r) => r.question !== question),
+          { question, response }
+        ]
       }));
     } else {
-      setUserSelections(prev => ({
+      setUserSelections((prev) => ({
         ...prev,
-        examResponses: prev.examResponses.filter(r => r.question !== question),
+        examResponses: prev.examResponses.filter((r) => r.question !== question)
       }));
     }
   };
 
   const handleDecisionFlow = (item: SubChapter | SubSubChapter) => {
-    if ('subChapterTitle' in item) {
+    if ("subChapterTitle" in item) {
       setSelectedSubChapter(item);
-      setUserSelections(prev => ({
+      setUserSelections((prev) => ({
         ...prev,
         subChapterTitle: item.subChapterTitle,
-        subSubChapterTitle: '',
+        subSubChapterTitle: ""
       }));
     } else {
       setSelectedSubSubChapter(item);
-      setUserSelections(prev => ({
+      setUserSelections((prev) => ({
         ...prev,
-        subSubChapterTitle: item.subSubChapterTitle,
+        subSubChapterTitle: item.subSubChapterTitle
       }));
     }
-    setCurrentView('history');
-    setNavigationPath(prev => [
+    setCurrentView("history");
+    setNavigationPath((prev) => [
       ...prev,
-      'subChapterTitle' in item
-        ? item.subChapterTitle
-        : item.subSubChapterTitle,
+      "subChapterTitle" in item ? item.subChapterTitle : item.subSubChapterTitle
     ]);
   };
 
   const handleContinue = () => {
-    if (currentView === 'examination') {
+    if (currentView === "examination") {
       const currentItem = selectedSubSubChapter || selectedSubChapter;
       if (!currentItem) {
         return;
       }
 
       const findingsOnExamination =
-        'findingsOnExamination' in currentItem
+        "findingsOnExamination" in currentItem
           ? currentItem.findingsOnExamination
-          : currentItem.pages[0]?.items?.find(item => item.type === 'decision')
-              ?.findingsOnExamination;
+          : currentItem.pages[0]?.items?.find(
+              (item) => item.type === "decision"
+            )?.findingsOnExamination;
 
       if (findingsOnExamination) {
-        const updatedResponses = findingsOnExamination.map(finding => {
+        const updatedResponses = findingsOnExamination.map((finding) => {
           const existing = examinationResponses.find(
-            r => r.question === finding,
+            (r) => r.question === finding
           );
           return {
             question: finding,
-            response: existing?.response || 'no',
+            response: existing?.response || "no"
           };
         });
         setExaminationResponses(updatedResponses);
       }
-      setCurrentView('diagnosis');
-    } else if (currentView === 'history') {
-      setCurrentView('examinationActions');
-    } else if (currentView === 'examinationActions') {
-      setCurrentView('examination');
+      setCurrentView("diagnosis");
+    } else if (currentView === "history") {
+      setCurrentView("examinationActions");
+    } else if (currentView === "examinationActions") {
+      setCurrentView("examination");
     }
   };
 
   const handleBack = () => {
-    if (currentView === 'examination') {
-      setCurrentView('examinationActions');
-    } else if (currentView === 'examinationActions') {
-      setCurrentView('history');
-    } else if (currentView === 'history') {
+    if (currentView === "examination") {
+      setCurrentView("examinationActions");
+    } else if (currentView === "examinationActions") {
+      setCurrentView("history");
+    } else if (currentView === "history") {
       if (selectedSubSubChapter) {
-        setCurrentView('subSubChapters');
+        setCurrentView("subSubChapters");
         setSelectedSubSubChapter(null);
       } else {
-        setCurrentView('subChapters');
+        setCurrentView("subChapters");
         setSelectedSubChapter(null);
       }
-      setNavigationPath(prev => prev.slice(0, -1));
-    } else if (currentView === 'subSubChapters') {
-      setCurrentView('subChapters');
-      setNavigationPath(prev => prev.slice(0, -1));
-    } else if (currentView === 'subChapters') {
+      setNavigationPath((prev) => prev.slice(0, -1));
+    } else if (currentView === "subSubChapters") {
+      setCurrentView("subChapters");
+      setNavigationPath((prev) => prev.slice(0, -1));
+    } else if (currentView === "subChapters") {
       navigation.goBack();
     }
   };
@@ -297,9 +416,9 @@ const DynamicFlow = ({route}: DynamicFlowProps) => {
     }
 
     const cases =
-      'cases' in currentItem
+      "cases" in currentItem
         ? currentItem.cases
-        : currentItem.pages[0]?.items?.find(item => item.type === 'decision')
+        : currentItem.pages[0]?.items?.find((item) => item.type === "decision")
             ?.cases;
 
     if (!cases) {
@@ -307,18 +426,18 @@ const DynamicFlow = ({route}: DynamicFlowProps) => {
     }
 
     const userPositiveFindings = examinationResponses
-      .filter(r => r.response === 'yes')
-      .map(r => r.question);
+      .filter((r) => r.response === "yes")
+      .map((r) => r.question);
 
-    return cases.filter(caseItem => {
+    return cases.filter((caseItem) => {
       if (caseItem.decisionDependencies.length > 0) {
-        return caseItem.decisionDependencies.some(dependency =>
-          userPositiveFindings.includes(dependency),
+        return caseItem.decisionDependencies.some((dependency) =>
+          userPositiveFindings.includes(dependency)
         );
       }
 
-      const matchingFindings = caseItem.findingsOnExamination.filter(finding =>
-        userPositiveFindings.includes(finding),
+      const matchingFindings = caseItem.findingsOnExamination.filter(
+        (finding) => userPositiveFindings.includes(finding)
       );
 
       const matchPercentage =
@@ -341,8 +460,7 @@ const DynamicFlow = ({route}: DynamicFlowProps) => {
               <Text
                 style={[
                   styles.breadcrumbText,
-                  index === navigationPath.length - 1 &&
-                    styles.breadcrumbActive,
+                  index === navigationPath.length - 1 && styles.breadcrumbActive
                 ]}>
                 {path}
               </Text>
@@ -355,15 +473,15 @@ const DynamicFlow = ({route}: DynamicFlowProps) => {
 
   const renderListItem = (
     item: SubChapter | SubSubChapter,
-    onPress: () => void,
+    onPress: () => void
   ) => (
     <TouchableOpacity style={styles.listItem} onPress={onPress}>
       <Text style={styles.listItemText}>
-        {'subChapterTitle' in item
+        {"subChapterTitle" in item
           ? item.subChapterTitle
           : item.subSubChapterTitle}
       </Text>
-      {'hasDecisions' in item && item.hasDecisions ? (
+      {"hasDecisions" in item && item.hasDecisions ? (
         <TouchableOpacity
           style={styles.decisionButton}
           onPress={() => handleDecisionFlow(item)}>
@@ -383,7 +501,7 @@ const DynamicFlow = ({route}: DynamicFlowProps) => {
 
     const history =
       currentItem.history ||
-      currentItem.pages[0]?.items?.find(item => item.type === 'decision')
+      currentItem.pages[0]?.items?.find((item) => item.type === "decision")
         ?.history;
 
     if (!history) {
@@ -414,7 +532,7 @@ const DynamicFlow = ({route}: DynamicFlowProps) => {
 
     const findingsOnExamination =
       currentItem.findingsOnExamination ||
-      currentItem.pages[0]?.items?.find(item => item.type === 'decision')
+      currentItem.pages[0]?.items?.find((item) => item.type === "decision")
         ?.findingsOnExamination;
 
     if (!findingsOnExamination) {
@@ -447,7 +565,7 @@ const DynamicFlow = ({route}: DynamicFlowProps) => {
 
     const findingsOnExamination =
       currentItem.findingsOnExamination ||
-      currentItem.pages[0]?.items?.find(item => item.type === 'decision')
+      currentItem.pages[0]?.items?.find((item) => item.type === "decision")
         ?.findingsOnExamination;
 
     if (!findingsOnExamination) {
@@ -463,7 +581,7 @@ const DynamicFlow = ({route}: DynamicFlowProps) => {
 
         {findingsOnExamination.map((finding, index) => {
           const response = examinationResponses.find(
-            r => r.question === finding,
+            (r) => r.question === finding
           );
 
           return (
@@ -474,14 +592,14 @@ const DynamicFlow = ({route}: DynamicFlowProps) => {
                 <TouchableOpacity
                   style={[
                     styles.checkbox,
-                    response?.response === 'yes' && styles.checkboxSelectedYes,
+                    response?.response === "yes" && styles.checkboxSelectedYes
                   ]}
-                  onPress={() => handleExaminationResponse(finding, 'yes')}>
+                  onPress={() => handleExaminationResponse(finding, "yes")}>
                   <Text
                     style={[
                       styles.checkboxText,
-                      response?.response === 'yes' &&
-                        styles.checkboxTextSelected,
+                      response?.response === "yes" &&
+                        styles.checkboxTextSelected
                     ]}>
                     Yes
                   </Text>
@@ -489,14 +607,13 @@ const DynamicFlow = ({route}: DynamicFlowProps) => {
                 <TouchableOpacity
                   style={[
                     styles.checkbox,
-                    response?.response === 'no' && styles.checkboxSelectedNo,
+                    response?.response === "no" && styles.checkboxSelectedNo
                   ]}
-                  onPress={() => handleExaminationResponse(finding, 'no')}>
+                  onPress={() => handleExaminationResponse(finding, "no")}>
                   <Text
                     style={[
                       styles.checkboxText,
-                      response?.response === 'no' &&
-                        styles.checkboxTextSelected,
+                      response?.response === "no" && styles.checkboxTextSelected
                     ]}>
                     No
                   </Text>
@@ -535,7 +652,7 @@ const DynamicFlow = ({route}: DynamicFlowProps) => {
           <TouchableOpacity
             style={[
               styles.diagnosisCollapsed,
-              isExpanded && styles.diagnosisCollapsedExpanded,
+              isExpanded && styles.diagnosisCollapsedExpanded
             ]}
             onPress={handlePress}>
             <Text style={styles.judgementText}>
@@ -583,51 +700,19 @@ const DynamicFlow = ({route}: DynamicFlowProps) => {
         </Text>
 
         {matchingCases.map((caseItem, index) =>
-          renderDiagnosisItem(caseItem, index),
+          renderDiagnosisItem(caseItem, index)
         )}
 
         <View style={styles.buttonContainer}>
           <TouchableOpacity
             style={styles.secondaryButton}
-            onPress={() => setCurrentView('examination')}>
+            onPress={() => setCurrentView("examination")}>
             <Text style={styles.viewActionsButtonText}>Back</Text>
           </TouchableOpacity>
           <CustomButton
             title="Submit"
-            onPress={() => {
-              // Get current selections
-              const selections = getCurrentSelections();
-
-              // Transform selections into the format expected by the mutation
-              const mutationInput = {
-                caseDescription: selections.examResponses
-                  .map(response => response.question)
-                  .join(', '), // Join all positive findings
-              };
-
-              // Call mutation with transformed data
-              createDecision.mutate(
-                {...mutationInput, ...selections},
-                {
-                  onSuccess: (data) => {
-                    console.log('data', data);
-                    Alert.alert('Success', 'Decision submitted successfully', [
-                      {
-                        text: 'OK',
-                        onPress: () => {
-                          navigation.goBack();
-                        },
-                      },
-                    ]);
-                  },
-                  onError: (error) => {
-                    console.log('error', error.response);
-                  },
-                },
-              );
-            }}>
-            Submit
-          </CustomButton>
+            onPress={() => setShowReasonModal(true)}
+          />
         </View>
       </View>
     );
@@ -641,20 +726,20 @@ const DynamicFlow = ({route}: DynamicFlowProps) => {
       <ScrollView
         style={styles.content}
         contentContainerStyle={styles.contentContainer}>
-        {currentView === 'subChapters' && selectedChapter && (
+        {currentView === "subChapters" && selectedChapter && (
           <>
             <Text style={styles.title}>{selectedChapter.chapter}</Text>
             {selectedChapter?.subChapters?.map((subChapter, index) => (
               <View key={index} style={styles.listContainer}>
                 {renderListItem(subChapter, () =>
-                  handleSubChapterSelect(subChapter),
+                  handleSubChapterSelect(subChapter)
                 )}
               </View>
             ))}
           </>
         )}
 
-        {currentView === 'subSubChapters' && selectedSubChapter && (
+        {currentView === "subSubChapters" && selectedSubChapter && (
           <>
             <Text style={styles.title}>
               {selectedSubChapter?.subChapterTitle}
@@ -662,14 +747,14 @@ const DynamicFlow = ({route}: DynamicFlowProps) => {
             {selectedSubChapter?.subSubChapters?.map((subSubChapter, index) => (
               <View key={index} style={styles.listContainer}>
                 {renderListItem(subSubChapter, () =>
-                  handleSubSubChapterSelect(subSubChapter),
+                  handleSubSubChapterSelect(subSubChapter)
                 )}
               </View>
             ))}
           </>
         )}
 
-        {currentView === 'history' &&
+        {currentView === "history" &&
           (selectedSubSubChapter || selectedSubChapter) && (
             <>
               <Text style={styles.title}>
@@ -692,7 +777,7 @@ const DynamicFlow = ({route}: DynamicFlowProps) => {
             </>
           )}
 
-        {currentView === 'examinationActions' &&
+        {currentView === "examinationActions" &&
           (selectedSubSubChapter || selectedSubChapter) && (
             <>
               <Text style={styles.title}>
@@ -715,7 +800,7 @@ const DynamicFlow = ({route}: DynamicFlowProps) => {
             </>
           )}
 
-        {currentView === 'examination' &&
+        {currentView === "examination" &&
           (selectedSubSubChapter || selectedSubChapter) && (
             <>
               <Text style={styles.title}>
@@ -726,7 +811,7 @@ const DynamicFlow = ({route}: DynamicFlowProps) => {
             </>
           )}
 
-        {currentView === 'diagnosis' &&
+        {currentView === "diagnosis" &&
           (selectedSubSubChapter || selectedSubChapter) && (
             <>
               <Text style={styles.title}>
@@ -737,451 +822,505 @@ const DynamicFlow = ({route}: DynamicFlowProps) => {
             </>
           )}
       </ScrollView>
+      <ReasonModal
+        visible={showReasonModal}
+        onClose={() => setShowReasonModal(false)}
+        isLoading={createDecision.isLoading}
+        onSubmit={(reasonData) => {
+          // Get current selections
+          const selections = getCurrentSelections();
+
+          // Transform selections into the format expected by the mutation
+          const mutationInput = {
+            caseDescription: selections.examResponses
+              .map((response) => response.question)
+              .join(", "),
+            reason: reasonData.reason,
+            patientId: reasonData.patientId,
+            patientAge: reasonData.patientAge
+          };
+
+          // Call mutation with transformed data
+          createDecision.mutate(
+            { ...mutationInput, ...selections },
+            {
+              onSuccess: (data) => {
+                setShowReasonModal(false);
+                Alert.alert("Success", "Decision submitted successfully", [
+                  {
+                    text: "OK",
+                    onPress: () => {
+                      navigation.goBack();
+                    }
+                  }
+                ]);
+              },
+              onError: (error) => {
+                console.log("error", error.response);
+              }
+            }
+          );
+        }}
+      />
     </SafeAreaView>
   );
 };
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8FFFB',
+    backgroundColor: "#F8FFFB"
   },
   content: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff"
   },
   headerSection: {
-    backgroundColor: '#F8FFFB',
+    backgroundColor: "#F8FFFB",
     padding: 16,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center"
   },
 
   details: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 10
   },
 
   profileName: {
     fontSize: 16,
-    fontWeight: '500',
-    color: '#101828',
+    fontWeight: "500",
+    color: "#101828"
   },
   cadre: {
     fontSize: 14,
-    color: '#667085',
-    fontWeight: '400',
+    color: "#667085",
+    fontWeight: "400"
   },
   contentContainer: {
-    paddingBottom: 80, // Add padding to account for footer
+    paddingBottom: 80 // Add padding to account for footer
   },
   title: {
     fontSize: 24,
-    fontWeight: '600',
+    fontWeight: "600",
     padding: 16,
-    color: '#000000',
-    textTransform: 'capitalize',
+    color: "#000000",
+    textTransform: "capitalize"
   },
   breadcrumbContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingTop: 16,
     paddingHorizontal: 16,
     paddingBottom: 10,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff"
   },
   subtitle: {
     fontSize: 20,
-    fontWeight: '600',
-    color: '#101828',
-    marginBottom: 8,
+    fontWeight: "600",
+    color: "#101828",
+    marginBottom: 8
   },
   description: {
     fontSize: 14,
-    color: '#666',
-    marginBottom: 24,
+    color: "#666",
+    marginBottom: 24
   },
   breadcrumb: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center"
   },
   breadcrumbText: {
     fontSize: 14,
-    color: '#98A2B3',
-    textTransform: 'capitalize',
+    color: "#98A2B3",
+    textTransform: "capitalize"
   },
   breadcrumbActive: {
-    color: '#0CA554',
+    color: "#0CA554"
   },
   breadcrumbSeparator: {
     marginHorizontal: 8,
-    color: '#666',
+    color: "#666"
   },
   backButton: {
-    marginRight: 12,
+    marginRight: 12
   },
   listContainer: {
     paddingHorizontal: 16,
-    marginBottom: 12,
+    marginBottom: 12
   },
   listItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     padding: 16,
     borderWidth: 1,
-    borderColor: '#F2F4F7',
-    backgroundColor: '#FCFCFD',
-    borderRadius: 8,
+    borderColor: "#F2F4F7",
+    backgroundColor: "#FCFCFD",
+    borderRadius: 8
   },
   listItemText: {
     fontSize: 16,
-    color: 'black',
+    color: "black",
     flex: 1,
-    textTransform: 'capitalize',
-    marginRight: 8,
+    textTransform: "capitalize",
+    marginRight: 8
   },
   historyContainer: {
-    padding: 16,
+    padding: 16
   },
   historyHeader: {
-    color: '#000000',
+    color: "#000000",
     fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 8,
+    fontWeight: "600",
+    marginBottom: 8
   },
   historySubHeader: {
-    color: '#667085',
+    color: "#667085",
     fontSize: 14,
-    fontWeight: '400',
-    marginBottom: 20,
+    fontWeight: "400",
+    marginBottom: 20
   },
   historyItem: {
-    flexDirection: 'row',
+    flexDirection: "row",
     marginBottom: 16,
-    fontSize: 16,
+    fontSize: 16
   },
   historyNumber: {
     width: 24,
     fontSize: 16,
-    fontWeight: '400',
-    color: '#101828',
+    fontWeight: "400",
+    color: "#101828"
   },
   historyQuestion: {
     flex: 1,
     fontSize: 16,
-    color: '#101828',
+    color: "#101828"
   },
   examinationContainer: {
     padding: 16,
-    marginBottom: 0,
+    marginBottom: 0
   },
   examinationItem: {
-    flexDirection: 'row',
-    marginBottom: 16,
+    flexDirection: "row",
+    marginBottom: 16
   },
   examinationNumber: {
     width: 24,
     fontSize: 14,
-    fontWeight: '500',
-    color: '#101828',
+    fontWeight: "500",
+    color: "#101828"
   },
   examinationText: {
     flex: 1,
     fontSize: 16,
-    color: '#101828',
+    color: "#101828"
+  },
+  pickerContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#E5E5E5",
+    borderRadius: 8,
+    padding: 12,
+    backgroundColor: "#FCFCFD"
+  },
+  pickerText: {
+    fontSize: 14,
+    color: "#101828"
   },
   footer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     padding: 16,
-    backgroundColor: '#fff',
-    position: 'absolute',
+    backgroundColor: "#fff",
+    position: "absolute",
     bottom: 0,
     left: 0,
-    right: 0,
+    right: 0
   },
   primaryButton: {
-    backgroundColor: '#0CA554',
+    backgroundColor: "#0CA554",
     borderRadius: 8,
     paddingVertical: 12,
     paddingHorizontal: 24,
     // flex: 1,
-    marginLeft: 8,
+    marginLeft: 8
   },
   primaryButtonText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 16,
-    fontWeight: '500',
-    textAlign: 'center',
+    fontWeight: "500",
+    textAlign: "center"
   },
   secondaryButton: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 8,
     paddingVertical: 12,
     paddingHorizontal: 24,
     borderWidth: 1,
-    borderColor: '#E5E5E5',
+    borderColor: "#E5E5E5"
   },
   secondaryButtonText: {
-    color: '#101828',
+    color: "#101828",
     fontSize: 16,
-    fontWeight: '500',
-    textAlign: 'center',
+    fontWeight: "500",
+    textAlign: "center"
   },
   checkboxContainer: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 8,
-    marginLeft: 'auto',
+    marginLeft: "auto"
   },
   checkbox: {
     borderWidth: 1,
-    borderColor: '#EAECF0',
+    borderColor: "#EAECF0",
     borderRadius: 8,
     paddingVertical: 8,
     paddingHorizontal: 16,
-    backgroundColor: 'white',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: 32,
+    backgroundColor: "white",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    height: 32
   },
   checkboxSelectedYes: {
-    backgroundColor: '#F6FEF9',
-    borderColor: '#D1FADF',
+    backgroundColor: "#F6FEF9",
+    borderColor: "#D1FADF"
   },
   checkboxSelectedNo: {
-    backgroundColor: '#FFFBFA', // Red color for No
-    borderColor: '#FDA29B',
+    backgroundColor: "#FFFBFA", // Red color for No
+    borderColor: "#FDA29B"
   },
   checkboxText: {
-    color: '#666',
+    color: "#666",
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: "500"
   },
   checkboxTextSelected: {
-    color: '#101828',
+    color: "#101828"
   },
   buttonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     marginTop: 24,
     gap: 8,
-    paddingBottom: 16,
+    paddingBottom: 16
   },
   viewActionsButton: {
     borderWidth: 1,
-    borderColor: '#E5E5E5',
+    borderColor: "#E5E5E5",
     borderRadius: 8,
     padding: 12,
-    flex: 1,
+    flex: 1
   },
   viewActionsButtonText: {
-    color: '#101828',
-    textAlign: 'center',
+    color: "#101828",
+    textAlign: "center",
     fontSize: 16,
-    fontWeight: '500',
-    flex: 1,
+    fontWeight: "500",
+    flex: 1
   },
   continueButton: {
-    backgroundColor: '#22C55E',
+    backgroundColor: "#22C55E",
     borderRadius: 8,
     padding: 12,
-    flex: 1,
+    flex: 1
   },
   continueButtonDisabled: {
-    backgroundColor: '#A1A1AA',
+    backgroundColor: "#A1A1AA"
   },
   continueButtonText: {
-    color: 'white',
-    textAlign: 'center',
+    color: "white",
+    textAlign: "center",
     fontSize: 16,
-    fontWeight: '500',
+    fontWeight: "500"
   },
   errorText: {
-    color: '#EF4444',
+    color: "#EF4444",
     fontSize: 14,
     marginTop: 8,
-    textAlign: 'center',
+    textAlign: "center"
   },
   judgementText: {
     fontSize: 16,
-    color: 'black',
+    color: "black"
   },
   diagnosisContainer: {
-    padding: 16,
+    padding: 16
   },
   diagnosisSection: {
-    marginBottom: 24,
+    marginBottom: 24
   },
   diagnosisHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 16
   },
   diagnosisTitle: {
     fontSize: 16,
-    fontWeight: '500',
-    color: '#101828',
-    flex: 1,
+    fontWeight: "500",
+    color: "#101828",
+    flex: 1
   },
   severityBadge: {
-    backgroundColor: '#FEE2E2',
+    backgroundColor: "#FEE2E2",
     paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 4,
+    borderRadius: 4
   },
   severityText: {
-    color: '#EF4444',
+    color: "#EF4444",
     fontSize: 12,
-    fontWeight: '500',
+    fontWeight: "500"
   },
   sectionTitle: {
     fontSize: 14,
-    fontWeight: '500',
-    color: '#101828',
+    fontWeight: "500",
+    color: "#101828",
     marginTop: 16,
-    marginBottom: 8,
+    marginBottom: 8
   },
   findingItem: {
-    flexDirection: 'row',
-    marginBottom: 8,
+    flexDirection: "row",
+    marginBottom: 8
   },
   findingNumber: {
     width: 24,
     fontSize: 14,
-    color: '#101828',
+    color: "#101828"
   },
   findingText: {
     flex: 1,
     fontSize: 14,
-    color: '#101828',
+    color: "#101828"
   },
   diagnosisItem: {
-    marginBottom: 12,
+    marginBottom: 12
   },
   diagnosisCollapsed: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     padding: 16,
     borderWidth: 1,
-    borderColor: '#F2F4F7',
-    backgroundColor: '#FCFCFD',
+    borderColor: "#F2F4F7",
+    backgroundColor: "#FCFCFD",
     borderRadius: 8,
-    color: 'black',
+    color: "black"
   },
   diagnosisCollapsedExpanded: {
     borderBottomLeftRadius: 0,
     borderBottomRightRadius: 0,
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E5E5',
-    color: 'black',
+    borderBottomColor: "#E5E5E5",
+    color: "black"
   },
   headerRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8
   },
   chevron: {
-    transform: [{rotate: '0deg'}],
+    transform: [{ rotate: "0deg" }]
   },
   chevronExpanded: {
-    transform: [{rotate: '90deg'}],
+    transform: [{ rotate: "90deg" }]
   },
   expandedContent: {
     padding: 16,
     borderWidth: 1,
     borderTopWidth: 0,
-    borderColor: '#F2F4F7',
-    backgroundColor: '#FCFCFD',
+    borderColor: "#F2F4F7",
+    backgroundColor: "#FCFCFD",
     borderBottomLeftRadius: 8,
-    borderBottomRightRadius: 8,
+    borderBottomRightRadius: 8
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center"
   },
   modalContent: {
-    backgroundColor: 'white',
+    backgroundColor: "white",
     borderRadius: 12,
     padding: 24,
-    width: '90%',
-    maxWidth: 400,
+    width: "90%",
+    maxWidth: 400
   },
   modalTitle: {
     fontSize: 20,
-    fontWeight: '600',
-    color: '#101828',
-    marginBottom: 8,
+    fontWeight: "600",
+    color: "#101828",
+    marginBottom: 8
   },
   modalDescription: {
     fontSize: 14,
-    color: '#666',
-    marginBottom: 24,
+    color: "#666",
+    marginBottom: 24
   },
   inputContainer: {
-    marginBottom: 16,
+    marginBottom: 16
   },
   inputLabel: {
     fontSize: 14,
-    fontWeight: '500',
-    color: '#101828',
-    marginBottom: 8,
+    fontWeight: "500",
+    color: "#101828",
+    marginBottom: 8
   },
   input: {
     borderWidth: 1,
-    borderColor: '#E5E5E5',
+    borderColor: "#E5E5E5",
     borderRadius: 8,
     padding: 12,
     fontSize: 14,
-    color: '#101828',
+    color: "#101828"
   },
   modalButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     gap: 12,
-    marginTop: 24,
+    marginTop: 24
   },
   cancelButton: {
     borderWidth: 1,
-    borderColor: '#E5E5E5',
+    borderColor: "#E5E5E5",
     borderRadius: 8,
     paddingHorizontal: 24,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center"
   },
   cancelButtonText: {
-    color: '#101828',
+    color: "#101828",
     fontSize: 16,
-    fontWeight: '500',
+    fontWeight: "500"
   },
   doneButton: {
-    backgroundColor: '#22C55E',
+    backgroundColor: "#22C55E",
     borderRadius: 8,
     paddingVertical: 12,
-    paddingHorizontal: 24,
+    paddingHorizontal: 24
   },
   doneButtonText: {
-    color: 'white',
+    color: "white",
     fontSize: 16,
-    fontWeight: '500',
+    fontWeight: "500"
   },
   decisionButton: {
-    backgroundColor: '#0CA554',
+    backgroundColor: "#0CA554",
     paddingVertical: 6,
     paddingHorizontal: 12,
-    borderRadius: 6,
+    borderRadius: 6
   },
   decisionButtonText: {
-    color: '#FFF',
+    color: "#FFF",
     fontSize: 14,
-    fontWeight: '500',
-  },
+    fontWeight: "500"
+  }
 });
 
 export default DynamicFlow;

@@ -1,7 +1,7 @@
-import {AxiosError, AxiosResponse} from 'axios';
-import {useMutation} from 'react-query';
+import { AxiosError, AxiosResponse } from "axios";
+import { useMutation } from "react-query";
 
-import request from '@/utils/api';
+import request from "@/utils/api";
 
 type ResponseType = {
   success: boolean;
@@ -12,22 +12,25 @@ type InputType = {
   caseDescription: string;
   examResponses: {
     question: string;
-    response: 'yes' | 'no';
+    response: "yes" | "no";
   }[];
   chapterTitle: string;
   subChapterTitle: string;
   subSubChapterTitle?: string;
   matchingDiagnoses: any[];
+  reason: string;
+  patientId?: string;
+  patientAge?: string | number;
 };
 
-type ErrorType = {error: string; success: boolean};
+type ErrorType = { error: string; success: boolean };
 
 const CreateDecision = (
-  input: InputType,
+  input: InputType
 ): Promise<AxiosResponse<ResponseType>> => {
   return request(
-    'POST',
-    '/decisions',
+    "POST",
+    "/decisions",
     {
       decisionDetails: {
         caseDescription: input.caseDescription,
@@ -36,9 +39,12 @@ const CreateDecision = (
         subChapterTitle: input.subChapterTitle,
         subSubChapterTitle: input.subSubChapterTitle,
         matchingDiagnoses: input.matchingDiagnoses,
-      },
+        reason: input.reason,
+        patientId: input.patientId,
+        patientAge: input.patientAge
+      }
     },
-    true,
+    true
   );
 };
 
@@ -50,4 +56,4 @@ const useCreateDecision = () => {
   >((input: InputType) => CreateDecision(input));
 };
 
-export {useCreateDecision};
+export { useCreateDecision };
