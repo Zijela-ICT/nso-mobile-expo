@@ -6,6 +6,7 @@ import HomeStack from '../stacks/HomeStack';
 import EbookStack from '../stacks/EbookStack';
 import SettingsStack from '../stacks/SettingsStack';
 import FacilitiesStack from '@/stacks/FacilitiesStack';
+import QuizStack from '@/stacks/QuizStack';
 
 const Tab = createBottomTabNavigator();
 
@@ -88,7 +89,7 @@ const TabNavigator = () => {
       />
       <Tab.Screen
         name="MessageStack"
-        component={EbookStack}
+        component={QuizStack}
       />
       <Tab.Screen
         name="MenuStack"

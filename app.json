@@ -17,7 +17,9 @@
         "foregroundImage": "./assets/images/android-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "additionalRepositories": ["https://www.jitpack.io"],
+      "additionalRepositories": [
+        "https://www.jitpack.io"
+      ],
       "permissions": [],
       "package": "com.zijela.chprbn"
     },
@@ -42,6 +44,14 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "950b1efd-4f89-4c82-bdb0-33c369492730"
+      }
     }
   }
 }

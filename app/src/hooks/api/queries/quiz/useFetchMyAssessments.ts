@@ -1,0 +1,68 @@
+import request from "@/utils/api";
+import { QUERYKEYS } from "@/utils/query-keys";
+import { useQuery } from "react-query";
+
+type Question = {
+  id: number;
+  question: string;
+  option1: string;
+  option2: string;
+  option3: string;
+  option4: string;
+  correctOption: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type AssessmentDataResponse = {
+  id: number;
+  startDate: string;
+  endDate: string;
+  duration: number;
+  isOpen: boolean;
+  createdAt: string;
+  updatedAt: string;
+  quizzes: {
+    id: number;
+    name: string;
+    description: string;
+    createdAt: string;
+    updatedAt: string;
+    questions: Question[];
+  };
+};
+
+type AssessmentResp = {
+  success: boolean;
+  message: string;
+  data: {
+    data: AssessmentDataResponse[];
+    totalCount: number;
+    currentPage: number;
+    totalPages: number;
+    pageSize: number;
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+  };
+};
+
+export const FetchMyAssessments = async (
+  page: number = 1,
+  perPage: number = 10
+): Promise<AssessmentResp> => {
+  return request(
+    "GET",
+    `/quizzes/my_assessments?page=${page}&limit=${perPage}`
+  );
+};
+
+export const useFetchMyAssessments = (
+  page: number = 1,
+  perPage: number = 10
+) => {
+  const queryKey = [QUERYKEYS.FETCHMYASSESSMENTS, page, perPage];
+  return useQuery(queryKey, () => FetchMyAssessments(page, perPage), {
+    retry: 1,
+    keepPreviousData: true
+  });
+};

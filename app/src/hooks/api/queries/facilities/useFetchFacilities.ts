@@ -34,7 +34,7 @@ export const FetchFacilities = async (
   page: number = 1,
   perPage: number = 10
 ): Promise<FacilitesResp> => {
-  return request("GET", `/facilities?page=${page}&limit=${perPage}`);
+  return request("GET", `/facilities/nearby?page=${page}&limit=${perPage}`);
 };
 
 export const useFetchFacilities = (page: number = 1, perPage: number = 10) => {

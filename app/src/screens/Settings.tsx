@@ -267,6 +267,7 @@ const SettingsScreen = () => {
         onPress: async () => {
           try {
             await AsyncStorage.removeItem('@auth_token');
+            await AsyncStorage.removeItem('quiz_state');
             setIsAuthenticated(false);
             showToast('Logged out successfully', 'success');
           } catch (error) {
