@@ -56,7 +56,7 @@ const Facilities = () => {
     FacilitiesDataResponse[]
   >([]);
 
-  const [hideFeature, setHideFeature] = useState(true)
+  const [hideFeature, setHideFeature] = useState(true);
 
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -219,12 +219,13 @@ const Facilities = () => {
     );
   }
 
-  if(hideFeature) {
-    return (
-      <View style={styles.loadingContainer}>
-        <Text>No nearby facilities</Text>
-      </View>)
-  }
+  // if (hideFeature) {
+  //   return (
+  //     <View style={styles.loadingContainer}>
+  //       <Text>No nearby facilities</Text>
+  //     </View>
+  //   );
+  // }
 
   return (
     <KeyboardAvoidingView
@@ -232,7 +233,8 @@ const Facilities = () => {
       style={styles.container}>
       <View style={styles.container}>
         {/* <TouchableWithoutFeedback onPress={Keyboard.dismiss}> */}
-          {Platform.OS === "ios" &&<MapView
+        {Platform.OS === "ios" && (
+          <MapView
             ref={mapRef}
             provider={PROVIDER_DEFAULT}
             style={styles.map}
@@ -247,11 +249,11 @@ const Facilities = () => {
             toolbarEnabled={false}
             loadingEnabled={true}
             region={
-                userLocation || {
+              userLocation || {
                 latitude: 0,
                 longitude: 0,
                 latitudeDelta: 360 / Math.pow(2, INITIAL_ZOOM),
-                longitudeDelta: 360 / Math.pow(2, INITIAL_ZOOM),
+                longitudeDelta: 360 / Math.pow(2, INITIAL_ZOOM)
               }
               // defaultCoordinate
             }>
@@ -268,7 +270,8 @@ const Facilities = () => {
                 onCalloutPress={() => openMaps(facility)}
               />
             ))}
-          </MapView>}
+          </MapView>
+        )}
         {/* </TouchableWithoutFeedback> */}
 
         {/* Header Section */}
@@ -321,12 +324,11 @@ const Facilities = () => {
           </View>
 
           <Text style={styles.title}>
-              Nearby Facilities ({nearbyFacilities.length})
-            </Text>
+            Nearby Facilities ({nearbyFacilities.length})
+          </Text>
           <ScrollView
             style={styles.facilitiesList}
             showsVerticalScrollIndicator={false}>
-            
             <View style={styles.grid}>
               {filteredFacilities?.map((facility) => (
                 <TouchableOpacity

@@ -3,9 +3,12 @@
   "main": "expo-router/entry",
   "version": "1.0.0",
   "scripts": {
-    "start": "expo start",
+    "start": "expo start --dev-client",
     "reset-project": "node ./scripts/reset-project.js",
     "android": "expo run:android",
+    "clean-android": "cd android && ./gradlew clean && cd ..",
+    "prebuild-android": "npx expo prebuild -p android --clean && node scripts/copy-keystore.js",
+    "build-apk": "cd android && ./gradlew assembleRelease && cd ..",
     "ios": "expo run:ios",
     "web": "expo start --web",
     "test": "jest --watchAll",

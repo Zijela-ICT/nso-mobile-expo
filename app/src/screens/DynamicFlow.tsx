@@ -116,7 +116,12 @@ interface ReasonModalProps {
   }) => void;
 }
 
-const ReasonModal = ({ visible, onClose, onSubmit, isLoading }: ReasonModalProps) => {
+const ReasonModal = ({
+  visible,
+  onClose,
+  onSubmit,
+  isLoading
+}: ReasonModalProps) => {
   const [reason, setReason] = useState("");
   const [patientId, setPatientId] = useState("");
   const [patientAge, setPatientAge] = useState("");
@@ -207,10 +212,11 @@ const ReasonModal = ({ visible, onClose, onSubmit, isLoading }: ReasonModalProps
               <Text style={styles.cancelButtonText}>Cancel</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.doneButton} onPress={handleSubmit}>
-              {
-                isLoading ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.doneButtonText}>Submit</Text>
-              }
-              
+              {isLoading ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Text style={styles.doneButtonText}>Submit</Text>
+              )}
             </TouchableOpacity>
           </View>
         </View>
@@ -275,7 +281,18 @@ const DynamicFlow = ({ route }: DynamicFlowProps) => {
       subChapterTitle: subChapter.subChapterTitle
     }));
 
-    if (subChapter.hasDecisions) {
+    // Check if subChapter has histories/decisions
+    const hasHistory =
+      subChapter.history ||
+      subChapter.pages?.[0]?.items?.find((item) => item.type === "decision")
+        ?.history;
+
+    const hasExaminations =
+      subChapter.examinationsActions ||
+      subChapter.pages?.[0]?.items?.find((item) => item.type === "decision")
+        ?.examinationsActions;
+
+    if (hasHistory || hasExaminations) {
       setCurrentView("history");
     } else {
       setCurrentView("subSubChapters");
@@ -495,18 +512,18 @@ const DynamicFlow = ({ route }: DynamicFlowProps) => {
 
   const renderHistory = () => {
     const currentItem = selectedSubSubChapter || selectedSubChapter;
-    if (!currentItem) {
-      return null;
-    }
+    if (!currentItem) return null;
 
     const history =
       currentItem.history ||
-      currentItem.pages[0]?.items?.find((item) => item.type === "decision")
-        ?.history;
+      currentItem.pages?.[0]?.items?.find((item) => item.type === "decision")
+        ?.history ||
+      selectedSubChapter?.history ||
+      selectedSubChapter?.pages?.[0]?.items?.find(
+        (item) => item.type === "decision"
+      )?.history;
 
-    if (!history) {
-      return null;
-    }
+    if (!history) return null;
 
     return (
       <View style={styles.historyContainer}>

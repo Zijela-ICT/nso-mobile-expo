@@ -12,37 +12,36 @@ type ResponseType = {
     requirePasswordReset: boolean;
     roles: string[];
   };
-};
-
-type InputType = {
+ };
+ 
+ type InputType = {
   id?: number;
   isCompleted: boolean;
   quizId: number;
-};
-
-type ErrorType = { error: string; success: boolean };
-
-const SubmitAssessment = (input: InputType): Promise<ResponseType> => {
+  submission: Array<{
+    quizId: number;
+    questions: Array<{
+      questionId: number;
+      selectedOption: string;
+    }>;
+  }>;
+ };
+ 
+ type ErrorType = { error: string; success: boolean };
+ 
+ const SubmitAssessment = (input: InputType): Promise<ResponseType> => {
   return request(
     "POST",
     `/quizzes/my_assessments/${input.id}?isComplete=${input.isCompleted}`,
     {
-      submission: [
-        {
-          quizId: input.quizId,
-          questions: [
-            { questionId: 2, selectedOption: "option1" },
-            { questionId: 1, selectedOption: "option4" }
-          ]
-        }
-      ]
+      submission: input.submission
     },
     true,
     true
   );
-};
-
-const useSubmitAssessment = () => {
+ };
+ 
+ const useSubmitAssessment = () => {
   const queryClient = useQueryClient();
   return useMutation<ResponseType, AxiosError<ErrorType>, InputType>(
     (input: InputType) => SubmitAssessment(input),
@@ -53,6 +52,6 @@ const useSubmitAssessment = () => {
       }
     }
   );
-};
-
-export { useSubmitAssessment };
+ };
+ 
+ export { useSubmitAssessment };

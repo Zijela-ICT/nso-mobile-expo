@@ -4,11 +4,12 @@ import {
   SafeAreaView,
   StyleSheet,
   TouchableOpacity,
+  ScrollView,
   View,
   Text,
   Modal,
   Image,
-  Dimensions,
+  Dimensions
 } from "react-native";
 import { Header } from "@/components";
 import { useNavigation } from "@react-navigation/native";
@@ -18,7 +19,7 @@ import { useStartAssessment } from "@/hooks/api/mutations/quiz";
 import { ArrowLeft } from "lucide-react-native";
 import { QuizStackParamList } from "@/stacks/QuizStack";
 
-type QuizNavigationProp = NativeStackNavigationProp<QuizStackParamList, "QuizList">;
+type QuizNavigationProp = NativeStackNavigationProp<QuizStackParamList, "Quiz">;
 
 const { width } = Dimensions.get("window");
 
@@ -36,22 +37,27 @@ export const Quiz: React.FC = () => {
     setShowConfirmModal(false);
     try {
       if (selectedAssessment?.id) {
-        await startAssessment.mutateAsync({ id: selectedAssessment.id }, {
-          onSuccess: (data) => {
-            navigation.navigate("QuizQuestions", {
-              assessmentId: selectedAssessment.id,
-              duration: selectedAssessment.duration,
-              quizName: selectedAssessment.quizzes?.[0]?.name
-            });
-          },
-        });
+        await startAssessment.mutateAsync(
+          { id: selectedAssessment.id },
+          {
+            onSuccess: (data) => {
+              navigation.navigate("QuizQuestions", {
+                assessmentId: selectedAssessment.id,
+                duration: selectedAssessment.duration,
+                quizName: selectedAssessment.quizzes?.[0]?.name
+              });
+            }
+          }
+        );
       }
     } catch (error) {
       console.error("Error starting assessment:", error);
     }
   };
 
-  const handleAssessmentSelect = (assessment: (typeof assessmentData.data.data)[0]) => {
+  const handleAssessmentSelect = (
+    assessment: (typeof assessmentData.data.data)[0]
+  ) => {
     setSelectedAssessment(assessment);
   };
 
@@ -70,8 +76,14 @@ export const Quiz: React.FC = () => {
     return (
       <SafeAreaView style={styles.container}>
         <Header />
-        <View style={styles.content}>
-          <Text style={[styles.quizHeaderTitle, { paddingLeft: 16, marginTop: 12 }]}>
+        <ScrollView
+          style={styles.content}
+          contentContainerStyle={styles.contentContainer}>
+          <Text
+            style={[
+              styles.quizHeaderTitle,
+              { paddingLeft: 16, marginTop: 12 }
+            ]}>
             Select an Assessment
           </Text>
           {assessmentData.data.data.map((assessment) => (
@@ -85,14 +97,15 @@ export const Quiz: React.FC = () => {
               </Text>
               <Text style={styles.daysLeft}>
                 {Math.ceil(
-                  (new Date(assessment.endDate).getTime() - new Date().getTime()) /
+                  (new Date(assessment.endDate).getTime() -
+                    new Date().getTime()) /
                     (1000 * 60 * 60 * 24)
                 )}{" "}
                 days left
               </Text>
             </TouchableOpacity>
           ))}
-        </View>
+        </ScrollView>
       </SafeAreaView>
     );
   }
@@ -100,12 +113,13 @@ export const Quiz: React.FC = () => {
   return (
     <SafeAreaView style={styles.container}>
       <Header />
-      <View style={styles.content}>
+      <ScrollView
+        style={styles.content}
+        contentContainerStyle={styles.contentContainer}>
         <View style={styles.quizHeader}>
-        <TouchableOpacity 
+          <TouchableOpacity
             style={styles.backButton}
-            onPress={() => setSelectedAssessment(null)}
-          >
+            onPress={() => setSelectedAssessment(null)}>
             <ArrowLeft size={24} color="#666" />
             <Text style={styles.backText}>Back</Text>
           </TouchableOpacity>
@@ -124,13 +138,14 @@ export const Quiz: React.FC = () => {
               {selectedAssessment.quizzes?.[0]?.name}
             </Text>
             <View style={styles.quizInfo}>
-              <View style={{ flexDirection: "row", gap: 4, alignItems: "center" }}>
+              {/* <View style={{ flexDirection: "row", gap: 4, alignItems: "center" }}>
                 <Text style={styles.quizInfoTextStrong}>
                   {selectedAssessment.quizzes?.[0]?.questions?.length || 0}
                 </Text>
                 <Text style={styles.quizInfoText}>Multiple-choice questions</Text>
-              </View>
-              <View style={{ flexDirection: "row", gap: 4, alignItems: "center" }}>
+              </View> */}
+              <View
+                style={{ flexDirection: "row", gap: 4, alignItems: "center" }}>
                 <Text style={styles.quizInfoTextStrong}>
                   {selectedAssessment.duration}
                 </Text>
@@ -139,7 +154,8 @@ export const Quiz: React.FC = () => {
             </View>
             <Text style={styles.daysLeft}>
               {Math.ceil(
-                (new Date(selectedAssessment.endDate).getTime() - new Date().getTime()) /
+                (new Date(selectedAssessment.endDate).getTime() -
+                  new Date().getTime()) /
                   (1000 * 60 * 60 * 24)
               )}{" "}
               days left
@@ -151,16 +167,16 @@ export const Quiz: React.FC = () => {
             </TouchableOpacity>
           </View>
         </View>
-      </View>
+      </ScrollView>
 
       <Modal visible={showConfirmModal} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Quiz</Text>
             <Text style={styles.modalText}>
-              You are about to start a {selectedAssessment.duration} minutes Quiz
-              and won't be able to return until you submit. Are you sure you want
-              to continue?
+              You are about to start a {selectedAssessment.duration} minutes
+              Quiz and won't be able to return until you submit. Are you sure
+              you want to continue?
             </Text>
             <View style={styles.modalButtons}>
               <TouchableOpacity
@@ -169,7 +185,11 @@ export const Quiz: React.FC = () => {
                 <Text style={styles.modalButtonNoText}>No</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.modalButton, styles.modalButtonYes, {backgroundColor: '#0CA554'}]}
+                style={[
+                  styles.modalButton,
+                  styles.modalButtonYes,
+                  { backgroundColor: "#0CA554" }
+                ]}
                 onPress={handleStartQuiz}>
                 <Text style={styles.modalButtonYesText}>Yes</Text>
               </TouchableOpacity>
@@ -184,25 +204,25 @@ export const Quiz: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F8FFFB",
+    backgroundColor: "#F8FFFB"
   },
   content: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "#fff"
   },
   quizHeader: {
-    padding: 16,
+    padding: 16
   },
   quizHeaderTitle: {
     fontWeight: "600",
     color: "#000",
     fontSize: 24,
-    marginBottom: 12,
+    marginBottom: 12
   },
   quizDescription: {
     fontWeight: "400",
     color: "#667085",
-    fontSize: 14,
+    fontSize: 14
   },
   quizCard: {
     margin: 16,
@@ -214,11 +234,11 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
     borderColor: "#F2F4F7",
-    width: width - 32,
+    width: width - 32
   },
   quizDetails: {
     flex: 1,
-    justifyContent: "space-between",
+    justifyContent: "space-between"
   },
   illustration: {
     width: "30%",
@@ -227,43 +247,46 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#F2F4F7",
     overflow: "hidden",
-    aspectRatio: 1,
+    aspectRatio: 1
   },
   quizTitle: {
     fontSize: 16,
     fontWeight: "600",
     color: "#101828",
-    marginBottom: 8,
+    marginBottom: 8
   },
   quizInfo: {
-    marginBottom: 16,
+    marginBottom: 16
   },
   quizInfoText: {
     fontSize: 14,
     color: "#666",
-    marginBottom: 4,
+    marginBottom: 4
   },
   quizInfoTextStrong: {
     fontWeight: "600",
     fontSize: 14,
     color: "#666",
-    marginBottom: 4,
+    marginBottom: 4
   },
   daysLeft: {
     fontSize: 14,
     color: "#666",
-    marginBottom: 16,
+    marginBottom: 16
   },
   startButton: {
     backgroundColor: "#0CA554",
     paddingVertical: 12,
     borderRadius: 8,
-    alignItems: "center",
+    alignItems: "center"
   },
   startButtonText: {
     fontSize: 16,
     color: "#fff",
-    fontWeight: "500",
+    fontWeight: "500"
+  },
+  contentContainer: {
+    flexGrow: 1
   },
   assessmentCard: {
     margin: 16,
@@ -271,71 +294,71 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: "#F2F4F7",
+    borderColor: "#F2F4F7"
   },
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0, 0, 0, 0.5)",
     justifyContent: "center",
-    alignItems: "center",
+    alignItems: "center"
   },
   modalContent: {
     backgroundColor: "#fff",
     borderRadius: 12,
     padding: 24,
     width: "90%",
-    maxWidth: 400,
+    maxWidth: 400
   },
   modalTitle: {
     fontSize: 20,
     fontWeight: "600",
     color: "#000",
-    marginBottom: 8,
+    marginBottom: 8
   },
   modalText: {
     fontSize: 14,
     color: "#666",
-    marginBottom: 24,
+    marginBottom: 24
   },
   modalButtons: {
     flexDirection: "row",
     justifyContent: "space-between",
-    gap: 12,
+    gap: 12
   },
   modalButton: {
     flex: 1,
     paddingVertical: 12,
     paddingHorizontal: 12,
     borderRadius: 8,
-    alignItems: "center",
+    alignItems: "center"
   },
   modalButtonNo: {
     backgroundColor: "#fff",
     borderWidth: 1,
-    borderColor: "#E5E5E5",
+    borderColor: "#E5E5E5"
   },
   modalButtonNoText: {
     fontSize: 16,
-    color: "#344054",
+    color: "#344054"
   },
   modalButtonYes: {
-    backgroundColor: "#0CA554",
+    backgroundColor: "#0CA554"
   },
   modalButtonYesText: {
     fontSize: 16,
-    color: "#fff",
+    color: "#fff"
   },
   backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingVertical: 8,
-    marginBottom: 16,
+    marginBottom: 16
   },
   backText: {
     marginLeft: 8,
     fontSize: 16,
-    color: '#666',
-  },
+    color: "#666"
+  }
 });
 
 export default Quiz;

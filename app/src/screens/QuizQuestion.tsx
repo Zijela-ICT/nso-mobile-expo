@@ -17,6 +17,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useFetchSingleAssessment } from "@/hooks/api/queries/quiz";
+import { useSubmitAssessment } from "@/hooks/api/mutations/quiz";
 import { QuizStackParamList } from "@/stacks/QuizStack";
 
 type QuizQuestionsNavigationProp = NativeStackNavigationProp<
@@ -197,10 +198,12 @@ export const QuizQuestions: React.FC = () => {
         submission: [
           {
             quizId: singleAssessmentData?.data?.quizzes[0]?.id,
-            questions: Object.entries(quizState.answers).map(([questionIndex, answerIndex]) => ({
-              questionId: allQuestions[parseInt(questionIndex)].id,
-              selectedOption: getOptionString(answerIndex)
-            }))
+            questions: Object.entries(quizState.answers).map(
+              ([questionIndex, answerIndex]) => ({
+                questionId: allQuestions[parseInt(questionIndex)].id,
+                selectedOption: getOptionString(answerIndex)
+              })
+            )
           }
         ]
       });
@@ -268,34 +271,35 @@ export const QuizQuestions: React.FC = () => {
       </ScrollView>
 
       <View style={styles.footer}>
-      {quizState.currentQuestionIndex > 0 && (
-        <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-          <Text style={styles.backButtonText}>Back</Text>
-        </TouchableOpacity>
-      )}
-      {quizState.currentQuestionIndex < allQuestions.length - 1 ? (
-        <TouchableOpacity 
-          style={[
-            styles.nextButton,
-            !quizState.answers[quizState.currentQuestionIndex] && styles.nextButtonDisabled
-          ]} 
-          disabled={!quizState.answers[quizState.currentQuestionIndex]}
-          onPress={handleNext}
-        >
-          <Text style={styles.nextButtonText}>Next</Text>
-        </TouchableOpacity>
-      ) : (
-        <TouchableOpacity
-          style={[
-            styles.submitButton,
-            !quizState.answers[quizState.currentQuestionIndex] && styles.nextButtonDisabled
-          ]}
-          disabled={!quizState.answers[quizState.currentQuestionIndex]}
-          onPress={() => setShowEndQuizModal(true)}>
-          <Text style={styles.submitButtonText}>Submit</Text>
-        </TouchableOpacity>
-      )}
-    </View>
+        {quizState.currentQuestionIndex > 0 && (
+          <TouchableOpacity style={styles.backButton} onPress={handleBack}>
+            <Text style={styles.backButtonText}>Back</Text>
+          </TouchableOpacity>
+        )}
+        {quizState.currentQuestionIndex < allQuestions.length - 1 ? (
+          <TouchableOpacity
+            style={[
+              styles.nextButton,
+              !quizState.answers[quizState.currentQuestionIndex] &&
+                styles.nextButtonDisabled
+            ]}
+            disabled={!quizState.answers[quizState.currentQuestionIndex]}
+            onPress={handleNext}>
+            <Text style={styles.nextButtonText}>Next</Text>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity
+            style={[
+              styles.submitButton,
+              !quizState.answers[quizState.currentQuestionIndex] &&
+                styles.nextButtonDisabled
+            ]}
+            disabled={!quizState.answers[quizState.currentQuestionIndex]}
+            onPress={() => setShowEndQuizModal(true)}>
+            <Text style={styles.submitButtonText}>Submit</Text>
+          </TouchableOpacity>
+        )}
+      </View>
 
       <Modal visible={showEndQuizModal} transparent animationType="fade">
         <View style={styles.modalOverlay}>
@@ -393,7 +397,7 @@ const styles = StyleSheet.create({
   },
   nextButtonDisabled: {
     backgroundColor: "#A0AEC0", // or any other color for disabled state
-    opacity: 0.5,
+    opacity: 0.5
   },
   optionButton: {
     padding: 16,
