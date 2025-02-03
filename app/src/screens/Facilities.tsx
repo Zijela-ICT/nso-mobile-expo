@@ -56,6 +56,8 @@ const Facilities = () => {
     FacilitiesDataResponse[]
   >([]);
 
+  const [hideFeature, setHideFeature] = useState(true)
+
   const [searchQuery, setSearchQuery] = useState("");
 
   const handleZoomIn = () => {
@@ -217,13 +219,20 @@ const Facilities = () => {
     );
   }
 
+  if(hideFeature) {
+    return (
+      <View style={styles.loadingContainer}>
+        <Text>No nearby facilities</Text>
+      </View>)
+  }
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       style={styles.container}>
       <View style={styles.container}>
         {/* <TouchableWithoutFeedback onPress={Keyboard.dismiss}> */}
-          <MapView
+          {Platform.OS === "ios" &&<MapView
             ref={mapRef}
             provider={PROVIDER_DEFAULT}
             style={styles.map}
@@ -259,7 +268,7 @@ const Facilities = () => {
                 onCalloutPress={() => openMaps(facility)}
               />
             ))}
-          </MapView>
+          </MapView>}
         {/* </TouchableWithoutFeedback> */}
 
         {/* Header Section */}
