@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -7,30 +7,42 @@ import {
   TouchableWithoutFeedback,
   KeyboardAvoidingView,
   Platform,
-  Keyboard,
-} from 'react-native';
-import {RouteProp, useNavigation, useRoute} from '@react-navigation/native';
-import BackgroundContainer from '../../components/background-container';
-import {CustomButton, CustomInput} from '../../components';
-import {RootStackParamList} from '../../navigation/stack-navigator';
-import {NativeStackNavigationProp} from '@react-navigation/native-stack';
+  Keyboard
+} from "react-native";
+import { RouteProp, useNavigation, useRoute } from "@react-navigation/native";
+import BackgroundContainer from "../../components/background-container";
+import { CustomButton, CustomInput } from "../../components";
+import { RootStackParamList } from "../../navigation/stack-navigator";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { useStudentSignup } from "@/hooks/api/mutations/auth";
 
 type SignUpScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
-  'OtpScreen'
+  "OtpScreen"
 >;
-type OtpScreenRouteProp = RouteProp<RootStackParamList, 'OtpScreen'>;
+type OtpScreenRouteProp = RouteProp<RootStackParamList, "OtpScreen">;
 const OtpScreen = () => {
   const navigation = useNavigation<SignUpScreenNavigationProp>();
   const route = useRoute<OtpScreenRouteProp>();
-  const [otp, setOtp] = useState('');
+  const [otp, setOtp] = useState("");
   const [timeLeft, setTimeLeft] = useState(9 * 60); // 9 minutes in seconds
   const [canResend, setCanResend] = useState(false);
+
+  const studentSignup = useStudentSignup();
+
+  const payload = {
+    email: route.params.payload?.email,
+    firstName: route.params.payload?.firstName,
+    lastName: route.params.payload?.lastName,
+    password: route.params.payload?.password,
+    cadre: route.params.payload?.cadre
+  }
+
 
   useEffect(() => {
     if (timeLeft > 0) {
       const timerId = setInterval(() => {
-        setTimeLeft(prev => {
+        setTimeLeft((prev) => {
           if (prev <= 1) {
             clearInterval(timerId);
             setCanResend(true);
@@ -45,12 +57,25 @@ const OtpScreen = () => {
   }, [timeLeft]);
 
   const handleProceed = () => {
-    // Handle OTP verification logic here
-    navigation.navigate('SetupPassword', {
-      email: route.params.email,
-      regNumber: route.params.regNumber,
-      otp,
-    });
+    if (route.params.userType === "student") {
+      studentSignup.mutateAsync(
+        {
+          ...payload, indexNumber:route.params.payload?.indexNumber,otp:otp
+        },
+        {
+          onSuccess: (data) => {
+            navigation.navigate("Login");
+          }
+        }
+      );
+    } else {
+      // Handle OTP verification logic here
+      navigation.navigate("SetupPassword", {
+        email: route.params.email,
+        regNumber: route.params.regNumber,
+        otp
+      });
+    }
   };
 
   const handleResendOTP = () => {
@@ -64,20 +89,20 @@ const OtpScreen = () => {
   const formatTime = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
-    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+    return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
   };
 
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={{flex: 1}}>
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      style={{ flex: 1 }}>
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <BackgroundContainer
-          backgroundImage={require('../../assets/bg-one.png')}>
+          backgroundImage={require("../../assets/bg-one.png")}>
           <Text style={styles.title}>OTP</Text>
           <Text style={styles.subTitle}>
-            An OTP has been sent to{' '}
-            <Text style={styles.strongText}>{route.params.email}</Text>
+            An OTP has been sent to{" "}
+            <Text style={styles.strongText}>{route.params.email || route.params.payload?.email}</Text>
           </Text>
 
           <CustomInput
@@ -95,7 +120,7 @@ const OtpScreen = () => {
             title="Proceed"
             onPress={handleProceed}
             disabled={otp.length === 0}
-            isLoading={false}
+            isLoading={studentSignup.isLoading}
             loadingText="Verifying..."
           />
 
@@ -103,7 +128,7 @@ const OtpScreen = () => {
             <Text style={styles.loginText}>
               {timeLeft > 0
                 ? `OTP expires in ${formatTime(timeLeft)} mins `
-                : 'OTP expired '}
+                : "OTP expired "}
             </Text>
             <TouchableOpacity onPress={handleResendOTP} disabled={!canResend}>
               <Text
@@ -121,39 +146,39 @@ const OtpScreen = () => {
 const styles = StyleSheet.create({
   title: {
     fontSize: 24,
-    fontWeight: '600',
-    textAlign: 'center',
-    color: 'white',
+    fontWeight: "600",
+    textAlign: "center",
+    color: "white"
   },
   subTitle: {
     marginBottom: 24,
     fontSize: 14,
-    color: 'white',
-    textAlign: 'center',
-    fontWeight: '400',
+    color: "white",
+    textAlign: "center",
+    fontWeight: "400"
   },
   strongText: {
-    fontWeight: '500',
+    fontWeight: "500"
   },
   loginContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 24,
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: 24
   },
   loginText: {
-    color: 'white',
-    fontSize: 14,
+    color: "white",
+    fontSize: 14
   },
   loginLink: {
-    color: 'white',
+    color: "white",
     fontSize: 14,
-    fontWeight: '600',
-    textDecorationLine: 'underline',
+    fontWeight: "600",
+    textDecorationLine: "underline"
   },
   disabledLink: {
-    opacity: 0.5,
-  },
+    opacity: 0.5
+  }
 });
 
 export default OtpScreen;

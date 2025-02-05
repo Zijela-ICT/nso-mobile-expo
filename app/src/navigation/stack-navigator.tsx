@@ -11,8 +11,17 @@ import ForgotPassword from '../screens/auth/forgot-password';
 export type RootStackParamList = {
   Signup: undefined;
   OtpScreen:{
-    email: string;
-    regNumber: string;
+    email?: string;
+    userType: string;
+    regNumber?: string;
+    payload?: {
+      indexNumber: string |undefined ,
+      firstName:string |undefined,
+      lastName: string |undefined,
+      email: string |undefined,
+      cadre: string |undefined,
+      password: string |undefined,
+    }
   };
   SetupPassword: {
     email: string;

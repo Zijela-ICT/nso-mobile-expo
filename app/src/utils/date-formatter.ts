@@ -1,3 +1,5 @@
+import { formatDistanceToNow, differenceInDays, isValid } from "date-fns";
+
 interface DateFormatterOptions extends Intl.DateTimeFormatOptions {
   timeZoneName?:
     | "short"
@@ -44,5 +46,35 @@ export const formatToTimezone = (
   } catch (error) {
     console.error("Error formatting date:", error);
     return "Invalid date";
+  }
+};
+
+export const getTimeUntil = (targetDateString: string | Date | number) => {
+  // Parse the target date
+  const targetDate = new Date(targetDateString);
+
+  // Validate the date
+  if (!isValid(targetDate)) {
+    throw new Error("Invalid date format");
+  }
+
+  try {
+    // Get days remaining
+    const daysLeft = differenceInDays(targetDate, new Date());
+
+    // Get relative time with natural language
+    const relativeTime = formatDistanceToNow(targetDate, {
+      addSuffix: true,
+      includeSeconds: true
+    });
+
+    return {
+      daysLeft,
+      relativeTime,
+      targetDate,
+      isExpired: daysLeft < 0
+    };
+  } catch (error: any) {
+    throw new Error(`Error calculating time: ${error.message}`);
   }
 };
