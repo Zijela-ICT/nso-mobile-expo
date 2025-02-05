@@ -71,6 +71,7 @@ const Facilities = () => {
     }
   };
 
+
   const handleZoomOut = () => {
     if (mapRef.current && userLocation) {
       const region = {
@@ -160,10 +161,10 @@ const Facilities = () => {
   }, []);
 
   useEffect(() => {
-    if (data?.data?.data && userLocation) {
-      const facilities = Array.isArray(data?.data?.data)
-        ? data?.data?.data
-        : [data?.data?.data];
+    if (data?.data && userLocation) {
+      const facilities = Array.isArray(data?.data)
+        ? data?.data
+        : [data?.data];
       const nearby = facilities.filter((facility) => {
         const distance = getDistance(
           {

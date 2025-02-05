@@ -16,6 +16,7 @@ type ResponseType = {
 type InputType = {
   email: string;
   password: string;
+  twoFAToken?: string;
 };
 
 type ErrorType = { error: string; success: boolean };
@@ -27,6 +28,7 @@ const Login = (input: InputType): Promise<ResponseType> => {
     {
       email: input.email,
       password: input.password,
+      twoFAToken: input.twoFAToken
     },
     false
   );

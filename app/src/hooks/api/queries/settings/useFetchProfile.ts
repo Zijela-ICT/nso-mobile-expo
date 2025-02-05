@@ -1,6 +1,6 @@
-import request from '@/utils/api';
-import {QUERYKEYS} from '@/utils/query-keys';
-import {useQuery} from 'react-query';
+import request from "@/utils/api";
+import { QUERYKEYS } from "@/utils/query-keys";
+import { useQuery } from "react-query";
 
 type PermissionResponse = {
   id: number;
@@ -22,15 +22,17 @@ type ProfileDataResponse = {
   password: string;
   mobile: string;
   cadre: string;
-  regExpiration: string | null;
+  regExpiration: number | Date;
   isChprbnBlocked: boolean;
   isDeactivated: boolean;
   avatar: string | null;
   isEmailConfirmed: boolean;
   userType: string | null;
   twoFASecret: string | null;
+  isSelfEnrolled: boolean;
+  indexNumber?: string | number;
   isFirstLogin: boolean;
-  twoFaMethod: 'email' | 'app' | null;
+  twoFaMethod: "email" | "app" | null;
   isTwoFAEnabled: boolean;
   createdAt: string | null;
   updatedAt: string | null;
@@ -44,12 +46,12 @@ type ProfileResp = {
 };
 
 export const FetchProfile = async (): Promise<ProfileResp> => {
-  return request('GET', '/users/me', null, false, false);
+  return request("GET", "/users/me", null, false, false);
 };
 
 export const useFetchProfile = () => {
   const queryKey = [QUERYKEYS.FETCHPROFILE];
   return useQuery(queryKey, () => FetchProfile(), {
-    retry: 1,
+    retry: 1
   });
 };

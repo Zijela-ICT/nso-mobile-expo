@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -8,30 +8,32 @@ import {
   Switch,
   ScrollView,
   SafeAreaView,
-  Modal,
-} from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import {useAuth} from '@/contexts/auth.context';
-import {showToast} from '@/utils/toast';
-import Feather from '@expo/vector-icons/Feather';
-import {Header} from '@/components';
-import {useFetchProfile} from '@/hooks/api/queries/settings';
-import {useNavigation} from '@react-navigation/native';
-import {NativeStackNavigationProp} from '@react-navigation/native-stack';
-import {SettingsStackParamList} from '@/stacks/SettingsStack';
-import {useUpdate2Fa, useUpdate2faMethod} from '@/hooks/api/mutations/profile';
+  Modal
+} from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import QRCode from "react-native-qrcode-svg";
+import { useAuth } from "@/contexts/auth.context";
+import { showToast } from "@/utils/toast";
+import Feather from "@expo/vector-icons/Feather";
+import { Header } from "@/components";
+import { useFetchProfile } from "@/hooks/api/queries/settings";
+import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { SettingsStackParamList } from "@/stacks/SettingsStack";
+import {
+  useUpdate2Fa,
+  useUpdate2faMethod
+} from "@/hooks/api/mutations/profile";
+import { getTimeUntil } from "@/utils/date-formatter";
 // import {usePushNotification} from '@/hooks/custom/usePushNotification';
 
-const SectionHeader = ({title}: {title: string}) => (
+const SectionHeader = ({ title }: { title: string }) => (
   <Text style={styles.sectionHeader}>{title}</Text>
 );
 
-
-
-
 const ProfileItem = ({
   label,
-  value,
+  value
 }: {
   label: string;
   value?: string | number;
@@ -48,7 +50,7 @@ const MenuItem = ({
   onPress,
   hasToggle = false,
   isEnabled = false,
-  onToggle,
+  onToggle
 }: {
   icon: any;
   title: string;
@@ -67,7 +69,7 @@ const MenuItem = ({
     </View>
     {hasToggle ? (
       <Switch
-        trackColor={{false: '#E4E7EC', true: '#12B76A'}}
+        trackColor={{ false: "#E4E7EC", true: "#12B76A" }}
         thumbColor="#FFFFFF"
         onValueChange={onToggle}
         value={isEnabled}
@@ -86,7 +88,7 @@ const ConfirmationModal = ({
   description,
   // inputLabel,
   // inputPlaceholder,
-  isLoading = false,
+  isLoading = false
 }: {
   visible: boolean;
   onClose: () => void;
@@ -113,7 +115,7 @@ const ConfirmationModal = ({
               onPress={onConfirm}
               disabled={isLoading}>
               <Text style={styles.confirmButtonText}>
-                {isLoading ? 'Enabling...' : 'Confirm'}
+                {isLoading ? "Enabling..." : "Confirm"}
               </Text>
             </TouchableOpacity>
           </View>
@@ -127,21 +129,48 @@ const TwoFAMethodModal = ({
   visible,
   onClose,
   currentMethod,
+  qrCodeUrl,
   onSave,
   onMethodSelect,
-  isLoading = false,
+  isLoading = false
 }: {
   visible: boolean;
+  qrCodeUrl: string | null;
   onClose: () => void;
   onSave: () => void;
-  currentMethod: 'email' | 'app';
-  onMethodSelect: (method: 'email' | 'app') => void;
+  currentMethod: "email" | "app";
+  onMethodSelect: (method: "email" | "app") => void;
   isLoading?: boolean;
 }) => {
+  // Add a render section for QR code
+  const renderQRCode = () => {
+    if (currentMethod === "app" && qrCodeUrl) {
+      return (
+        <View style={styles.qrCodeContainer}>
+          <Text style={styles.qrCodeTitle}>Scan QR Code</Text>
+          <Text style={styles.qrCodeDescription}>
+            Scan this QR code with your authenticator app
+          </Text>
+          <View style={styles.qrCode}>
+            <QRCode
+              value={qrCodeUrl}
+              size={200}
+              backgroundColor="white"
+              color="black"
+            />
+          </View>
+        </View>
+      );
+    }
+    return null;
+  };
+
   return (
     <Modal visible={visible} transparent={true} animationType="fade">
       <View style={styles.modalOverlay}>
-        <View style={styles.modalContent}>
+        <View
+          style={[styles.modalContent, qrCodeUrl && styles.modalContentLarge]}>
+          {renderQRCode()}
           <Text style={styles.modalTitle}>Select 2FA Method</Text>
           <Text style={styles.modalDescription}>
             Choose your preferred two-factor authentication method
@@ -151,19 +180,19 @@ const TwoFAMethodModal = ({
             <TouchableOpacity
               style={[
                 styles.methodOption,
-                currentMethod === 'email' && styles.methodOptionSelected,
+                currentMethod === "email" && styles.methodOptionSelected
               ]}
-              onPress={() => onMethodSelect('email')}>
+              onPress={() => onMethodSelect("email")}>
               <Feather
                 name="mail"
                 size={24}
-                color={currentMethod === 'email' ? '#12B76A' : '#667085'}
+                color={currentMethod === "email" ? "#12B76A" : "#667085"}
               />
               <View style={styles.methodTextContainer}>
                 <Text
                   style={[
                     styles.methodTitle,
-                    currentMethod === 'email' && styles.methodTitleSelected,
+                    currentMethod === "email" && styles.methodTitleSelected
                   ]}>
                   Email
                 </Text>
@@ -176,19 +205,19 @@ const TwoFAMethodModal = ({
             <TouchableOpacity
               style={[
                 styles.methodOption,
-                currentMethod === 'app' && styles.methodOptionSelected,
+                currentMethod === "app" && styles.methodOptionSelected
               ]}
-              onPress={() => onMethodSelect('app')}>
+              onPress={() => onMethodSelect("app")}>
               <Feather
                 name="smartphone"
                 size={24}
-                color={currentMethod === 'app' ? '#12B76A' : '#667085'}
+                color={currentMethod === "app" ? "#12B76A" : "#667085"}
               />
               <View style={styles.methodTextContainer}>
                 <Text
                   style={[
                     styles.methodTitle,
-                    currentMethod === 'app' && styles.methodTitleSelected,
+                    currentMethod === "app" && styles.methodTitleSelected
                   ]}>
                   Authenticator App
                 </Text>
@@ -208,7 +237,7 @@ const TwoFAMethodModal = ({
               onPress={onSave}
               disabled={isLoading}>
               <Text style={styles.confirmButtonText}>
-                {isLoading ? 'Saving...' : 'Save'}
+                {isLoading ? "Saving..." : "Save"}
               </Text>
             </TouchableOpacity>
           </View>
@@ -220,20 +249,20 @@ const TwoFAMethodModal = ({
 
 type SettingsNavigationProp = NativeStackNavigationProp<
   SettingsStackParamList,
-  'Settings'
+  "Settings"
 >;
 const SettingsScreen = () => {
+  const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
   const updateTwoFa = useUpdate2Fa();
   const choose2FAMethod = useUpdate2faMethod();
   const navigation = useNavigation<SettingsNavigationProp>();
-  const {data} = useFetchProfile();
+  const { data } = useFetchProfile();
   const {
     setIsAuthenticated,
     isBiometricEnabled,
     enableBiometric,
-    disableBiometric,
+    disableBiometric
   } = useAuth();
-
 
   // const {
   //   isEnabled: pushNotificationsEnabled,
@@ -243,7 +272,7 @@ const SettingsScreen = () => {
 
   const [biometricEnabled, setBiometricEnabled] = useState(false);
   const [twoFactorEnabled, setTwoFactorEnabled] = useState<boolean | undefined>(
-    false,
+    false
   );
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
 
@@ -252,30 +281,30 @@ const SettingsScreen = () => {
   const [isConfirming, setIsConfirming] = useState(false);
 
   const [show2FAMethodModal, setShow2FAMethodModal] = useState(false);
-  const [twoFAMethod, setTwoFAMethod] = useState<'email' | 'app'>('email');
+  const [twoFAMethod, setTwoFAMethod] = useState<"email" | "app">("email");
 
   const profile = data?.data;
+
   const handleLogout = async () => {
-    Alert.alert('Logout', 'Are you sure you want to logout?', [
+    Alert.alert("Logout", "Are you sure you want to logout?", [
       {
-        text: 'Cancel',
-        style: 'cancel',
+        text: "Cancel",
+        style: "cancel"
       },
       {
-        text: 'Logout',
-        style: 'destructive',
+        text: "Logout",
+        style: "destructive",
         onPress: async () => {
           try {
-            await AsyncStorage.removeItem('@auth_token');
-            await AsyncStorage.removeItem('quiz_state');
+            await AsyncStorage.removeItem("@auth_token");
+            await AsyncStorage.removeItem("quiz_state");
             setIsAuthenticated(false);
-            showToast('Logged out successfully', 'success');
+            showToast("Logged out successfully", "success");
           } catch (error) {
-            console.error('Error during logout:', error);
-            showToast('Failed to logout', 'error');
+            showToast("Failed to logout", "error");
           }
-        },
-      },
+        }
+      }
     ]);
   };
 
@@ -285,31 +314,31 @@ const SettingsScreen = () => {
     } else {
       await disableBiometric();
       setBiometricEnabled(false);
-      showToast('Biometric authentication disabled', 'success');
+      showToast("Biometric authentication disabled", "success");
     }
   };
 
   const handleTwoFactorToggle = (value: boolean) => {
     if (value) {
       updateTwoFa.mutate(
-        {type: 'enabled'},
+        { type: "enabled" },
         {
           onSuccess: () => {
             setTwoFactorEnabled(true);
-          },
-        },
+          }
+        }
       );
     } else {
       updateTwoFa.mutate(
-        {type: 'disabled'},
+        { type: "disabled" },
         {
           onSuccess: () => {
             setTwoFactorEnabled(false);
-            showToast('Two-factor authentication disabled', 'success');
-          },
-        },
+            showToast("Two-factor authentication disabled", "success");
+          }
+        }
       );
-      showToast('Two-factor authentication disabled', 'success');
+      showToast("Two-factor authentication disabled", "success");
     }
   };
 
@@ -321,11 +350,11 @@ const SettingsScreen = () => {
       if (success) {
         setShowBiometricModal(false);
         setBiometricEnabled(true);
-        showToast('Biometric authentication enabled', 'success');
+        showToast("Biometric authentication enabled", "success");
       }
     } catch (error) {
-      console.error('Error enabling biometric:', error);
-      showToast('Failed to enable biometric authentication', 'error');
+      console.error("Error enabling biometric:", error);
+      showToast("Failed to enable biometric authentication", "error");
     } finally {
       setIsConfirming(false);
     }
@@ -339,10 +368,10 @@ const SettingsScreen = () => {
 
       setTwoFactorEnabled(true);
       setShowTwoFactorModal(false);
-      showToast('Two-factor authentication enabled', 'success');
+      showToast("Two-factor authentication enabled", "success");
     } catch (error) {
-      console.error('Error enabling 2FA:', error);
-      showToast('Failed to enable two-factor authentication', 'error');
+      console.error("Error enabling 2FA:", error);
+      showToast("Failed to enable two-factor authentication", "error");
     } finally {
       setIsConfirming(false);
     }
@@ -357,7 +386,7 @@ const SettingsScreen = () => {
   useEffect(() => {
     setTwoFactorEnabled(profile?.isTwoFAEnabled);
     setBiometricEnabled(isBiometricEnabled);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [biometricEnabled, twoFactorEnabled, data]);
 
   return (
@@ -371,8 +400,17 @@ const SettingsScreen = () => {
           contentContainerStyle={styles.scrollContent}>
           <View style={styles.card}>
             <SectionHeader title="Profile" />
-            <ProfileItem label="Index Number" value={profile?.regNumber} />
+            <ProfileItem
+              label="Index Number"
+              value={profile?.regNumber || profile?.indexNumber}
+            />
             <ProfileItem label="Email address" value={profile?.email} />
+            {!!profile?.regExpiration && (
+              <ProfileItem
+                label="License expiration date"
+                value={getTimeUntil(profile?.regExpiration)?.relativeTime}
+              />
+            )}
           </View>
 
           <View style={styles.card}>
@@ -381,7 +419,7 @@ const SettingsScreen = () => {
               icon={<Feather name="lock" size={24} color="#F79009" />}
               title="Change Password"
               onPress={() => {
-                navigation.navigate('ChangePassword');
+                navigation.navigate("ChangePassword");
               }}
             />
           </View>
@@ -444,28 +482,39 @@ const SettingsScreen = () => {
 
       <TwoFAMethodModal
         visible={show2FAMethodModal}
-        onClose={() => setShow2FAMethodModal(false)}
+        onClose={() => {
+          setShow2FAMethodModal(false);
+          setQrCodeUrl(null); // Reset QR code when closing modal
+        }}
         currentMethod={twoFAMethod}
         isLoading={choose2FAMethod.isLoading}
-        onMethodSelect={method => {
+        onMethodSelect={(method) => {
           setTwoFAMethod(method);
+          if (method === "email") {
+            setQrCodeUrl(null); // Reset QR code when switching to email
+          }
         }}
+        qrCodeUrl={qrCodeUrl}
         onSave={() => {
           choose2FAMethod.mutate(
-            {twoFaMethod: twoFAMethod, userId: profile?.id},
+            { twoFaMethod: twoFAMethod, userId: profile?.id },
             {
-              onSuccess: () => {
-                // Here you would typically make an API call to update the user's preference
-                setShow2FAMethodModal(false);
+              onSuccess: (data) => {
+                if (data?.data?.otpauth_url) {
+                  setQrCodeUrl(data.data.otpauth_url);
+                } else {
+                  setShow2FAMethodModal(false);
+                  setQrCodeUrl(null);
+                }
               },
-              onError: error => {
-                Alert.alert('', error.message, [
+              onError: (error) => {
+                Alert.alert("", error.message, [
                   {
-                    text: 'OK',
-                  },
+                    text: "OK"
+                  }
                 ]);
-              },
-            },
+              }
+            }
           );
         }}
       />
@@ -487,185 +536,218 @@ const SettingsScreen = () => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#F8FFFB',
+    backgroundColor: "#F8FFFB"
   },
   container: {
     flex: 1,
     padding: 16,
-    backgroundColor: '#FFF',
+    backgroundColor: "#FFF"
   },
   scrollContent: {
     flexGrow: 1,
-    paddingBottom: 16,
+    paddingBottom: 16
   },
   title: {
     fontSize: 24,
-    fontWeight: '600',
-    color: '#101828',
-    marginBottom: 24,
+    fontWeight: "600",
+    color: "#101828",
+    marginBottom: 24
   },
   sectionHeader: {
     fontSize: 14,
-    fontWeight: '600',
-    color: '#98A2B3',
-    marginBottom: 8,
+    fontWeight: "600",
+    color: "#98A2B3",
+    marginBottom: 8
   },
   card: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#EAECF0',
+    borderColor: "#EAECF0",
     padding: 16,
     marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 1},
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
-    elevation: 2,
+    elevation: 2
   },
   profileItem: {
-    marginBottom: 12,
+    marginBottom: 12
   },
   label: {
     fontSize: 12,
-    color: '#667085',
-    fontWeight: '400',
+    color: "#667085",
+    fontWeight: "400"
   },
   value: {
     fontSize: 16,
-    color: '#101828',
-    fontWeight: '500',
+    color: "#101828",
+    fontWeight: "500"
   },
   menuItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 8
   },
   menuItemLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center"
   },
   icon: {
-    shadowColor: '#000',
+    shadowColor: "#000",
     borderWidth: 1,
-    borderColor: '#EAECF0',
+    borderColor: "#EAECF0",
     paddingHorizontal: 4,
     paddingVertical: 4,
     borderRadius: 8,
-    shadowOffset: {width: 0, height: 1},
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
-    elevation: 2,
+    elevation: 2
   },
   menuItemText: {
     fontSize: 14,
-    color: '#475467',
+    color: "#475467",
     marginLeft: 12,
-    fontWeight: '500',
+    fontWeight: "500"
   },
   logoutButton: {
-    backgroundColor: '#FEE4E2',
+    backgroundColor: "#FEE4E2",
     padding: 16,
     borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 16,
+    alignItems: "center",
+    marginTop: 16
   },
   logoutText: {
-    color: '#D92D20',
+    color: "#D92D20",
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600"
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 16,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 16
   },
   modalContent: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     borderRadius: 12,
     padding: 24,
-    width: '100%',
-    maxWidth: 340,
+    width: "100%",
+    maxWidth: 340
   },
   modalTitle: {
     fontSize: 18,
-    fontWeight: '600',
-    color: '#101828',
+    fontWeight: "600",
+    color: "#101828",
     marginBottom: 8,
-    textAlign: 'center',
+    textAlign: "center"
   },
   modalDescription: {
     fontSize: 14,
-    color: '#475467',
+    color: "#475467",
     marginBottom: 24,
-    textAlign: 'center',
-    lineHeight: 20,
+    textAlign: "center",
+    lineHeight: 20
   },
   modalButtons: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 12,
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: 12
   },
   cancelButton: {
     paddingVertical: 10,
     paddingHorizontal: 24,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#D0D5DD',
-    backgroundColor: '#FFFFFF',
+    borderColor: "#D0D5DD",
+    backgroundColor: "#FFFFFF"
   },
   confirmButton: {
     paddingVertical: 10,
     paddingHorizontal: 24,
     borderRadius: 8,
-    backgroundColor: '#12B76A',
+    backgroundColor: "#12B76A"
   },
   cancelButtonText: {
-    color: '#344054',
+    color: "#344054",
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: "600"
   },
   confirmButtonText: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: "600"
   },
   methodOptions: {
-    marginBottom: 24,
+    marginBottom: 24
   },
   methodOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     padding: 16,
     borderWidth: 1,
-    borderColor: '#EAECF0',
+    borderColor: "#EAECF0",
     borderRadius: 8,
-    marginBottom: 8,
+    marginBottom: 8
   },
   methodOptionSelected: {
-    borderColor: '#12B76A',
-    backgroundColor: '#F6FEF9',
+    borderColor: "#12B76A",
+    backgroundColor: "#F6FEF9"
   },
   methodTextContainer: {
     marginLeft: 12,
-    flex: 1,
+    flex: 1
   },
   methodTitle: {
     fontSize: 14,
-    fontWeight: '500',
-    color: '#344054',
-    marginBottom: 4,
+    fontWeight: "500",
+    color: "#344054",
+    marginBottom: 4
   },
   methodTitleSelected: {
-    color: '#12B76A',
+    color: "#12B76A"
   },
   methodDescription: {
     fontSize: 12,
-    color: '#667085',
+    color: "#667085"
   },
+  modalContentLarge: {
+    maxHeight: "80%"
+  },
+  qrCodeContainer: {
+    alignItems: "center",
+    marginVertical: 24,
+    paddingHorizontal: 16
+  },
+  qrCodeTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#101828",
+    marginBottom: 8
+  },
+  qrCodeDescription: {
+    fontSize: 14,
+    color: "#475467",
+    marginBottom: 16,
+    textAlign: "center"
+  },
+  qrCode: {
+    padding: 16,
+    backgroundColor: "white",
+    borderRadius: 12,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5
+  }
 });
 
 export default SettingsScreen;
