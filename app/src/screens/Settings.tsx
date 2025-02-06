@@ -25,6 +25,7 @@ import {
   useUpdate2faMethod
 } from "@/hooks/api/mutations/profile";
 import { getTimeUntil } from "@/utils/date-formatter";
+import { format } from "date-fns";
 // import {usePushNotification} from '@/hooks/custom/usePushNotification';
 
 const SectionHeader = ({ title }: { title: string }) => (
@@ -406,10 +407,21 @@ const SettingsScreen = () => {
             />
             <ProfileItem label="Email address" value={profile?.email} />
             {!!profile?.regExpiration && (
-              <ProfileItem
-                label="License expiration date"
-                value={getTimeUntil(profile?.regExpiration)?.relativeTime}
-              />
+              <View style={styles.profileItem}>
+                <Text style={styles.label}>License expiration date</Text>
+                <Text
+                  style={[
+                    styles.value,
+                    {
+                      color: "#12B76A"
+                    }
+                  ]}>
+                  {getTimeUntil(profile?.regExpiration)?.relativeTime}
+                </Text>
+                <Text style={styles.value}>
+                  ({format(new Date(profile?.regExpiration), "PPpp")})
+                </Text>
+              </View>
             )}
           </View>
 
