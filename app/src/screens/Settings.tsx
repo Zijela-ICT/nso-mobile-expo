@@ -402,7 +402,7 @@ const SettingsScreen = () => {
           <View style={styles.card}>
             <SectionHeader title="Profile" />
             <ProfileItem
-              label="Index Number"
+              label={profile?.indexNumber ? "Index Number" : "Registration Number"}
               value={profile?.regNumber || profile?.indexNumber}
             />
             <ProfileItem label="Email address" value={profile?.email} />

@@ -348,8 +348,8 @@ const Facilities = () => {
         <PanGestureHandler onGestureEvent={gestureHandler}>
           <AnimatedView style={[styles.bottomSheet, bottomSheetStyle]}>
             <View style={styles.bottomSheetHandle} />
-            <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
             <View style={styles.controls}>
+            <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
               <TextInput
                 style={styles.searchInput}
                 placeholder="Search facilities..."
@@ -358,6 +358,8 @@ const Facilities = () => {
                 onChangeText={setSearchQuery}
                 onFocus={handleFocus}
               />
+            </TouchableWithoutFeedback>
+
               <Text style={styles.radiusText}>Radius: {Math.round(radius)} km</Text>
               <Slider
                 style={styles.slider}
@@ -369,7 +371,6 @@ const Facilities = () => {
                 maximumTrackTintColor="#000000"
               />
             </View>
-            </TouchableWithoutFeedback>
 
             <Text style={styles.title}>Nearby Facilities ({filteredFacilities.length})</Text>
             <ScrollView style={styles.facilitiesList} showsVerticalScrollIndicator={false}>
