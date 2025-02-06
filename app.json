@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "chprbn",
+    "name": "CHPRBN National Standing Order",
     "slug": "chprbn",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -17,9 +17,7 @@
         "foregroundImage": "./assets/images/android-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "additionalRepositories": [
-        "https://www.jitpack.io"
-      ],
+      "additionalRepositories": ["https://www.jitpack.io"],
       "permissions": [],
       "package": "com.zijela.chprbn"
     },
