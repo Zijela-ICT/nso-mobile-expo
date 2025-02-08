@@ -47,7 +47,7 @@ const CARE_LEVEL_COLORS = {
 
 const AnimatedView = Animated.createAnimatedComponent(View);
 
-const BOTTOM_SHEET_MIN_HEIGHT = height * 0.35; // Increased minimum height
+const BOTTOM_SHEET_MIN_HEIGHT = height * 0.5; // Increased minimum height
 const BOTTOM_SHEET_MAX_HEIGHT = height * 0.7;
 
 
@@ -345,8 +345,8 @@ const Facilities = () => {
         </View>
 
         {/* Bottom Sheet */}
-        <PanGestureHandler onGestureEvent={gestureHandler}>
-          <AnimatedView style={[styles.bottomSheet, bottomSheetStyle]}>
+        {/* <PanGestureHandler onGestureEvent={gestureHandler}> */}
+          <View style={styles.bottomSheet}>
             <View style={styles.bottomSheetHandle} />
             <View style={styles.controls}>
             <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
@@ -419,8 +419,8 @@ const Facilities = () => {
                 ))}
               </View>
             </ScrollView>
-          </AnimatedView>
-        </PanGestureHandler>
+          </View>
+        {/* </PanGestureHandler> */}
       </View>
     </KeyboardAvoidingView>
   );
@@ -504,7 +504,7 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     justifyContent: "space-between",
     gap: 12,
-    marginBottom: 20
+    marginBottom: 80
   },
   bottomSheetHandle: {
     width: 40,
@@ -602,6 +602,7 @@ const styles = StyleSheet.create({
     right: 0,
     backgroundColor: "white",
     borderTopLeftRadius: 20,
+    height: BOTTOM_SHEET_MIN_HEIGHT,
     borderTopRightRadius: 20,
     paddingTop: 12,
     paddingHorizontal: 16,

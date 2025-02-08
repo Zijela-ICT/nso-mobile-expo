@@ -9,12 +9,16 @@ import {
   Platform,
 } from 'react-native';
 import { CustomInput, CustomButton } from './index';
+import { showToast } from '@/utils/toast';
+import { useTwoFaRollback } from '@/hooks/api/mutations/auth';
 
 interface TwoFATokenModalProps {
   isVisible: boolean;
   onClose: () => void;
   onSubmit: (token: string) => void;
   isLoading?: boolean;
+  email?: string;
+  password?: string;
 }
 
 export const TwoFATokenModal: React.FC<TwoFATokenModalProps> = ({
@@ -22,13 +26,41 @@ export const TwoFATokenModal: React.FC<TwoFATokenModalProps> = ({
   onClose,
   onSubmit,
   isLoading = false,
+  email,
+  password,
 }) => {
   const [token, setToken] = useState('');
+  const [showBackupCode, setShowBackupCode] = useState(false);
+  const twoFaRollback = useTwoFaRollback();
 
   const handleSubmit = () => {
     if (token.trim()) {
-      onSubmit(token);
-      setToken('');
+      if (showBackupCode && email && password) {
+        console.log('email', email, password, token);
+        // Handle backup code submission
+        twoFaRollback.mutate(
+          {
+            email,
+            password,
+            backupCode: token,
+          },
+          {
+            onSuccess: () => {
+              showToast('Successfully reverted to email authentication', 'success');
+              setShowBackupCode(false);
+              setToken('');
+              onClose();
+            },
+            onError: (error) => {
+              showToast(error.message || 'Invalid backup code', 'error');
+            },
+          }
+        );
+      } else {
+        // Handle regular 2FA code submission
+        onSubmit(token);
+        setToken('');
+      }
     }
   };
 
@@ -44,31 +76,49 @@ export const TwoFATokenModal: React.FC<TwoFATokenModalProps> = ({
         <View style={styles.modalContent}>
           <Text style={styles.modalTitle}>Two-Factor Authentication</Text>
           <Text style={styles.modalDescription}>
-            Please enter the verification code sent to your email
+            {showBackupCode
+              ? 'Enter your backup code to revert to email authentication'
+              : 'Please enter the verification code sent to your email or authenticator app'}
           </Text>
 
           <CustomInput
-            label="Verification Code"
-            placeholder="Enter code"
+            label={showBackupCode ? "Backup Code" : "Verification Code"}
+            placeholder={showBackupCode ? "Enter backup code" : "Enter code"}
+            placeholderTextColor='#333'
             inputStyle={{ color: "#000" }}
             value={token}
             onChangeText={setToken}
-            keyboardType="number-pad"
+            keyboardType="default"
             autoCapitalize="none"
           />
 
+          {!showBackupCode && (
+            <TouchableOpacity 
+              onPress={() => setShowBackupCode(true)}
+              style={styles.backupCodeLink}>
+              <Text style={styles.backupCodeText}>
+                Lost access to authenticator? Use backup code
+              </Text>
+            </TouchableOpacity>
+          )}
+
           <View style={styles.buttonContainer}>
             <CustomButton
-              title="Submit"
+              title={showBackupCode ? "Revert to Email" : "Submit"}
               onPress={handleSubmit}
-              isLoading={isLoading}
-              loadingText="Verifying..."
-              disabled={!token.trim() || isLoading}
+              isLoading={isLoading || twoFaRollback.isLoading}
+              loadingText={showBackupCode ? "Reverting..." : "Verifying..."}
+              disabled={!token.trim() || isLoading || twoFaRollback.isLoading}
             />
             <TouchableOpacity 
-              onPress={onClose}
+              onPress={() => {
+                setShowBackupCode(false);
+                setToken('');
+                onClose();
+                setShowBackupCode(false);
+              }}
               style={styles.cancelButton}
-              disabled={isLoading}>
+              disabled={isLoading || twoFaRollback.isLoading}>
               <Text style={styles.cancelText}>Cancel</Text>
             </TouchableOpacity>
           </View>
@@ -115,5 +165,16 @@ const styles = StyleSheet.create({
     color: '#666',
     fontSize: 16,
     fontWeight: '500',
+  },
+  backupCodeLink: {
+    marginTop: 8,
+    marginBottom: 12,
+    alignItems: 'center',
+  },
+  backupCodeText: {
+    color: '#12B76A',
+    fontSize: 14,
+    fontWeight: '500',
+    textDecorationLine: 'underline',
   },
 });

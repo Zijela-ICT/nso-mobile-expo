@@ -148,10 +148,10 @@ const Login = () => {
   };
 
   const handleLoginError = (error: any) => {
-    if (error?.message === "Token sent to your email") {
+    if (error?.message === "Token sent to your email"|| error?.message.includes("authenticator app")) {
       setLoginCredentials({
-        email: formik.values.email,
-        password: formik.values.password
+        email: formik.values.email || loginCredentials.email,
+        password: formik.values.password || loginCredentials.password,
       });
       setShowTwoFAModal(true);
     } else {
@@ -292,6 +292,8 @@ const Login = () => {
               onClose={() => setShowTwoFAModal(false)}
               onSubmit={handleTwoFASubmit}
               isLoading={login.isLoading}
+              email={loginCredentials?.email}
+              password={loginCredentials?.password}
             />
           </ScrollView>
         </BackgroundContainer>

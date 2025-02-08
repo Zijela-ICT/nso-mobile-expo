@@ -8,7 +8,8 @@ import {
   Switch,
   ScrollView,
   SafeAreaView,
-  Modal
+  Modal,
+  Clipboard
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import QRCode from "react-native-qrcode-svg";
@@ -130,6 +131,7 @@ const TwoFAMethodModal = ({
   visible,
   onClose,
   currentMethod,
+  passKey,
   qrCodeUrl,
   onSave,
   onMethodSelect,
@@ -137,6 +139,7 @@ const TwoFAMethodModal = ({
 }: {
   visible: boolean;
   qrCodeUrl: string | null;
+  passKey: string | null;
   onClose: () => void;
   onSave: () => void;
   currentMethod: "email" | "app";
@@ -155,11 +158,30 @@ const TwoFAMethodModal = ({
           <View style={styles.qrCode}>
             <QRCode
               value={qrCodeUrl}
-              size={200}
+              size={150}
               backgroundColor="white"
               color="black"
             />
           </View>
+          {passKey && (
+            <View style={styles.passKeyContainer}>
+              <Text style={styles.passKeyTitle}>Your Backup Key</Text>
+              <Text style={styles.passKeyDescription}>
+                Keep this key safe. You'll need it if you lose access to your authenticator app.
+              </Text>
+              <View style={styles.passKeyBox}>
+                <Text style={styles.passKeyText}>{passKey}</Text>
+                <TouchableOpacity
+                  style={styles.copyButton}
+                  onPress={() => {
+                    Clipboard.setString(passKey);
+                    showToast("Backup key copied to clipboard", "success");
+                  }}>
+                  <Feather name="copy" size={20} color="#667085" />
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
         </View>
       );
     }
@@ -169,65 +191,68 @@ const TwoFAMethodModal = ({
   return (
     <Modal visible={visible} transparent={true} animationType="fade">
       <View style={styles.modalOverlay}>
-        <View
-          style={[styles.modalContent, qrCodeUrl && styles.modalContentLarge]}>
-          {renderQRCode()}
-          <Text style={styles.modalTitle}>Select 2FA Method</Text>
-          <Text style={styles.modalDescription}>
-            Choose your preferred two-factor authentication method
-          </Text>
+        <View style={[styles.modalContent, qrCodeUrl && styles.modalContentLarge]}>
+          <ScrollView 
+            showsVerticalScrollIndicator={false}
+         >
+            {renderQRCode()}
+            <Text style={styles.modalTitle}>Select 2FA Method</Text>
+            <Text style={styles.modalDescription}>
+              Choose your preferred two-factor authentication method
+            </Text>
 
-          <View style={styles.methodOptions}>
-            <TouchableOpacity
-              style={[
-                styles.methodOption,
-                currentMethod === "email" && styles.methodOptionSelected
-              ]}
-              onPress={() => onMethodSelect("email")}>
-              <Feather
-                name="mail"
-                size={24}
-                color={currentMethod === "email" ? "#12B76A" : "#667085"}
-              />
-              <View style={styles.methodTextContainer}>
-                <Text
-                  style={[
-                    styles.methodTitle,
-                    currentMethod === "email" && styles.methodTitleSelected
-                  ]}>
-                  Email
-                </Text>
-                <Text style={styles.methodDescription}>
-                  Receive verification codes via email
-                </Text>
-              </View>
-            </TouchableOpacity>
+            <View style={styles.methodOptions}>
+              <TouchableOpacity
+                style={[
+                  styles.methodOption,
+                  currentMethod === "email" && styles.methodOptionSelected
+                ]}
+                onPress={() => onMethodSelect("email")}>
+                <Feather
+                  name="mail"
+                  size={24}
+                  color={currentMethod === "email" ? "#12B76A" : "#667085"}
+                />
+                <View style={styles.methodTextContainer}>
+                  <Text
+                    style={[
+                      styles.methodTitle,
+                      currentMethod === "email" && styles.methodTitleSelected
+                    ]}>
+                    Email
+                  </Text>
+                  <Text style={styles.methodDescription}>
+                    Receive verification codes via email
+                  </Text>
+                </View>
+              </TouchableOpacity>
 
-            <TouchableOpacity
-              style={[
-                styles.methodOption,
-                currentMethod === "app" && styles.methodOptionSelected
-              ]}
-              onPress={() => onMethodSelect("app")}>
-              <Feather
-                name="smartphone"
-                size={24}
-                color={currentMethod === "app" ? "#12B76A" : "#667085"}
-              />
-              <View style={styles.methodTextContainer}>
-                <Text
-                  style={[
-                    styles.methodTitle,
-                    currentMethod === "app" && styles.methodTitleSelected
-                  ]}>
-                  Authenticator App
-                </Text>
-                <Text style={styles.methodDescription}>
-                  Use an authenticator app like Google Authenticator
-                </Text>
-              </View>
-            </TouchableOpacity>
-          </View>
+              <TouchableOpacity
+                style={[
+                  styles.methodOption,
+                  currentMethod === "app" && styles.methodOptionSelected
+                ]}
+                onPress={() => onMethodSelect("app")}>
+                <Feather
+                  name="smartphone"
+                  size={24}
+                  color={currentMethod === "app" ? "#12B76A" : "#667085"}
+                />
+                <View style={styles.methodTextContainer}>
+                  <Text
+                    style={[
+                      styles.methodTitle,
+                      currentMethod === "app" && styles.methodTitleSelected
+                    ]}>
+                    Authenticator App
+                  </Text>
+                  <Text style={styles.methodDescription}>
+                    Use an authenticator app like Google Authenticator
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            </View>
+          </ScrollView>
 
           <View style={styles.modalButtons}>
             <TouchableOpacity style={styles.cancelButton} onPress={onClose}>
@@ -248,12 +273,14 @@ const TwoFAMethodModal = ({
   );
 };
 
+
 type SettingsNavigationProp = NativeStackNavigationProp<
   SettingsStackParamList,
   "Settings"
 >;
 const SettingsScreen = () => {
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
+  const [passKey, setPassKey] = useState<string | null>(null);
   const updateTwoFa = useUpdate2Fa();
   const choose2FAMethod = useUpdate2faMethod();
   const navigation = useNavigation<SettingsNavigationProp>();
@@ -497,6 +524,7 @@ const SettingsScreen = () => {
         onClose={() => {
           setShow2FAMethodModal(false);
           setQrCodeUrl(null); // Reset QR code when closing modal
+          setPassKey(null);
         }}
         currentMethod={twoFAMethod}
         isLoading={choose2FAMethod.isLoading}
@@ -504,9 +532,11 @@ const SettingsScreen = () => {
           setTwoFAMethod(method);
           if (method === "email") {
             setQrCodeUrl(null); // Reset QR code when switching to email
+            setPassKey(null);
           }
         }}
         qrCodeUrl={qrCodeUrl}
+        passKey={passKey}
         onSave={() => {
           choose2FAMethod.mutate(
             { twoFaMethod: twoFAMethod, userId: profile?.id },
@@ -514,6 +544,7 @@ const SettingsScreen = () => {
               onSuccess: (data) => {
                 if (data?.data?.otpauth_url) {
                   setQrCodeUrl(data.data.otpauth_url);
+                  setPassKey(data.data.twoFaBackupCode);
                 } else {
                   setShow2FAMethodModal(false);
                   setQrCodeUrl(null);
@@ -759,6 +790,39 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
     elevation: 5
+  },
+  passKeyContainer: {
+    marginTop: 24,
+    width: "100%"
+  },
+  passKeyTitle: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#101828",
+    marginBottom: 4
+  },
+  passKeyDescription: {
+    fontSize: 12,
+    color: "#475467",
+    marginBottom: 12
+  },
+  passKeyBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#F9FAFB",
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#EAECF0",
+    padding: 12
+  },
+  passKeyText: {
+    flex: 1,
+    fontSize: 14,
+    color: "#101828",
+    fontFamily: "monospace"
+  },
+  copyButton: {
+    padding: 8
   }
 });
 
