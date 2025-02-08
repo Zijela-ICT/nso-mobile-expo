@@ -67,6 +67,7 @@ const Login = () => {
   const handleLoginSuccess = async (data: any) => {
     try {
       await AsyncStorage.setItem("@auth_token", data.data.token);
+      await AsyncStorage.setItem("@refresh_token", data.data.refreshToken);
 
       // Store credentials for future biometric login if enabled
       if (isBiometricEnabled) {
@@ -94,10 +95,12 @@ const Login = () => {
       } else {
         showToast("Unauthorized user", "error");
         await AsyncStorage.removeItem("@auth_token");
+        await AsyncStorage.removeItem("@refresh_token");
       }
     } catch (error) {
       showToast("Login failed. Please try again.", "error");
       await AsyncStorage.removeItem("@auth_token");
+      await AsyncStorage.removeItem("@refresh_token");
     }
   };
 
@@ -145,10 +148,10 @@ const Login = () => {
   };
 
   const handleLoginError = (error: any) => {
-    if (error?.message === "Token sent to your email") {
+    if (error?.message === "Token sent to your email"|| error?.message.includes("authenticator app")) {
       setLoginCredentials({
-        email: formik.values.email,
-        password: formik.values.password
+        email: formik.values.email || loginCredentials.email,
+        password: formik.values.password || loginCredentials.password,
       });
       setShowTwoFAModal(true);
     } else {
@@ -289,6 +292,8 @@ const Login = () => {
               onClose={() => setShowTwoFAModal(false)}
               onSubmit={handleTwoFASubmit}
               isLoading={login.isLoading}
+              email={loginCredentials?.email}
+              password={loginCredentials?.password}
             />
           </ScrollView>
         </BackgroundContainer>

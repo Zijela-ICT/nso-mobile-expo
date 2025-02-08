@@ -426,6 +426,31 @@ const DynamicFlow = ({ route }: DynamicFlowProps) => {
     }
   };
 
+  const hasDecisionContent = (item: SubChapter | SubSubChapter) => {
+    // Check direct properties
+    if (
+      item.history?.length ||
+      item.hasDecisions ||
+      item.examinationsActions?.length ||
+      item.findingsOnExamination?.length
+    ) {
+      return true;
+    }
+
+    // Check in pages
+    const hasDecisionInPages = item.pages?.some((page) =>
+      page.items?.some(
+        (pageItem) =>
+          pageItem.type === "decision" ||
+          pageItem.history?.length ||
+          pageItem.examinationsActions?.length ||
+          pageItem.findingsOnExamination?.length
+      )
+    );
+
+    return hasDecisionInPages;
+  };
+
   const getMatchingCases = () => {
     const currentItem = selectedSubSubChapter || selectedSubChapter;
     if (!currentItem) {
@@ -746,13 +771,15 @@ const DynamicFlow = ({ route }: DynamicFlowProps) => {
         {currentView === "subChapters" && selectedChapter && (
           <>
             <Text style={styles.title}>{selectedChapter.chapter}</Text>
-            {selectedChapter?.subChapters?.map((subChapter, index) => (
-              <View key={index} style={styles.listContainer}>
-                {renderListItem(subChapter, () =>
-                  handleSubChapterSelect(subChapter)
-                )}
-              </View>
-            ))}
+            {selectedChapter?.subChapters
+              ?.filter((subChapter) => hasDecisionContent(subChapter))
+              .map((subChapter, index) => (
+                <View key={index} style={styles.listContainer}>
+                  {renderListItem(subChapter, () =>
+                    handleSubChapterSelect(subChapter)
+                  )}
+                </View>
+              ))}
           </>
         )}
 
@@ -761,13 +788,15 @@ const DynamicFlow = ({ route }: DynamicFlowProps) => {
             <Text style={styles.title}>
               {selectedSubChapter?.subChapterTitle}
             </Text>
-            {selectedSubChapter?.subSubChapters?.map((subSubChapter, index) => (
-              <View key={index} style={styles.listContainer}>
-                {renderListItem(subSubChapter, () =>
-                  handleSubSubChapterSelect(subSubChapter)
-                )}
-              </View>
-            ))}
+            {selectedSubChapter?.subSubChapters
+              ?.filter((subSubChapter) => hasDecisionContent(subSubChapter))
+              .map((subSubChapter, index) => (
+                <View key={index} style={styles.listContainer}>
+                  {renderListItem(subSubChapter, () =>
+                    handleSubSubChapterSelect(subSubChapter)
+                  )}
+                </View>
+              ))}
           </>
         )}
 

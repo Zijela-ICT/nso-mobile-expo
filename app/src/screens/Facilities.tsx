@@ -7,13 +7,13 @@ import {
   ScrollView,
   Dimensions,
   ActivityIndicator,
-  SafeAreaView,
   Platform,
   Linking,
   Alert,
   TextInput,
   KeyboardAvoidingView,
-  Keyboard
+  TouchableWithoutFeedback,
+  Keyboard,
 } from "react-native";
 import MapView, { Marker, PROVIDER_DEFAULT } from "react-native-maps";
 import Slider from "@react-native-community/slider";
@@ -24,17 +24,32 @@ import {
   FacilitiesDataResponse,
   useFetchFacilities
 } from "@/hooks/api/queries/facilities";
-import { Locate, ZoomIn, ZoomOut } from "lucide-react-native";
+import { Locate, ZoomIn, ZoomOut, Phone, MapPin } from "lucide-react-native";
+import Animated, {
+  useAnimatedGestureHandler,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+} from 'react-native-reanimated';
+import { PanGestureHandler } from "react-native-gesture-handler";
 
 const { width, height } = Dimensions.get("window");
 const CARD_WIDTH = (width - 48) / 2;
 const INITIAL_ZOOM = 15;
+
 
 const CARE_LEVEL_COLORS = {
   primary: "#2C6000", // Green
   secondary: "#1a73e8", // Blue
   tertiary: "#B42318" // Red
 };
+
+
+const AnimatedView = Animated.createAnimatedComponent(View);
+
+const BOTTOM_SHEET_MIN_HEIGHT = height * 0.5; // Increased minimum height
+const BOTTOM_SHEET_MAX_HEIGHT = height * 0.7;
+
 
 const defaultCoordinate = {
   latitude: 37.4220936,
@@ -43,6 +58,7 @@ const defaultCoordinate = {
   longitudeDelta: 0.010986328125
 };
 const Facilities = () => {
+  const scrollViewRef = useRef<ScrollView>(null);
   const mapRef = useRef<MapView>(null);
   const { data, isLoading } = useFetchFacilities();
   const [userLocation, setUserLocation] = useState<{
@@ -56,7 +72,57 @@ const Facilities = () => {
     FacilitiesDataResponse[]
   >([]);
 
-  const [hideFeature, setHideFeature] = useState(true);
+  const heightValue = useSharedValue(BOTTOM_SHEET_MIN_HEIGHT);
+
+  const gestureHandler = useAnimatedGestureHandler({
+    onStart: (_, ctx) => {
+      ctx.startHeight = heightValue.value;
+    },
+    onActive: (event, ctx) => {
+      const newHeight = ctx.startHeight - event.translationY;
+      heightValue.value = Math.max(
+        BOTTOM_SHEET_MIN_HEIGHT,
+        Math.min(BOTTOM_SHEET_MAX_HEIGHT, newHeight)
+      );
+    },
+    onEnd: (event) => {
+      const velocity = -event.velocityY;
+      const shouldSnap = Math.abs(velocity) > 500;
+      
+      let finalHeight;
+      if (shouldSnap) {
+        finalHeight = velocity > 0 ? BOTTOM_SHEET_MAX_HEIGHT : BOTTOM_SHEET_MIN_HEIGHT;
+      } else {
+        const midPoint = (BOTTOM_SHEET_MAX_HEIGHT + BOTTOM_SHEET_MIN_HEIGHT) / 2;
+        finalHeight = heightValue.value > midPoint ? BOTTOM_SHEET_MAX_HEIGHT : BOTTOM_SHEET_MIN_HEIGHT;
+      }
+      
+      heightValue.value = withSpring(finalHeight, {
+        damping: 20,
+        stiffness: 90,
+        velocity: velocity
+      });
+    },
+  });
+
+  const handleFocus = () => {
+    // Adjust bottom sheet height when keyboard opens
+    heightValue.value = withSpring(BOTTOM_SHEET_MAX_HEIGHT * 0.5, {
+      damping: 20,
+      stiffness: 90
+    });
+    
+    // Small delay to ensure the animation has started
+    setTimeout(() => {
+      scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+    }, 100);
+  };
+
+  const bottomSheetStyle = useAnimatedStyle(() => {
+    return {
+      height: heightValue.value
+    };
+  });
 
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -70,7 +136,6 @@ const Facilities = () => {
       mapRef.current.animateToRegion(region, 300);
     }
   };
-
 
   const handleZoomOut = () => {
     if (mapRef.current && userLocation) {
@@ -162,9 +227,7 @@ const Facilities = () => {
 
   useEffect(() => {
     if (data?.data && userLocation) {
-      const facilities = Array.isArray(data?.data)
-        ? data?.data
-        : [data?.data];
+      const facilities = Array.isArray(data?.data) ? data?.data : [data?.data];
       const nearby = facilities.filter((facility) => {
         const distance = getDistance(
           {
@@ -220,20 +283,13 @@ const Facilities = () => {
     );
   }
 
-  // if (hideFeature) {
-  //   return (
-  //     <View style={styles.loadingContainer}>
-  //       <Text>No nearby facilities</Text>
-  //     </View>
-  //   );
-  // }
+ 
 
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       style={styles.container}>
       <View style={styles.container}>
-        {/* <TouchableWithoutFeedback onPress={Keyboard.dismiss}> */}
         {Platform.OS === "ios" && (
           <MapView
             ref={mapRef}
@@ -273,14 +329,7 @@ const Facilities = () => {
             ))}
           </MapView>
         )}
-        {/* </TouchableWithoutFeedback> */}
-
-        {/* Header Section */}
-        {/* <View style={styles.headerBannerContainer}>
-        <SafeAreaView style={styles.headerBanner}>
-          <Header />
-        </SafeAreaView>
-      </View> */}
+       
 
         {/* Map Controls */}
         <View style={styles.mapControls}>
@@ -296,65 +345,66 @@ const Facilities = () => {
         </View>
 
         {/* Bottom Sheet */}
-        <View style={styles.bottomSheet}>
-          <View style={styles.bottomSheetHandle} />
+        {/* <PanGestureHandler onGestureEvent={gestureHandler}> */}
+          <View style={styles.bottomSheet}>
+            <View style={styles.bottomSheetHandle} />
+            <View style={styles.controls}>
+            <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Search facilities..."
+                placeholderTextColor={"#667085"}
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                onFocus={handleFocus}
+              />
+            </TouchableWithoutFeedback>
 
-          <View style={styles.controls}>
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search facilities..."
-              placeholderTextColor={"#667085"}
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-            />
-            <Text style={styles.radiusText}>
-              Radius: {Math.round(radius)} km
-            </Text>
-            <Slider
-              style={styles.slider}
-              minimumValue={0}
-              maximumValue={100}
-              value={radius}
-              // onValueChange={setRadius}
-              onSlidingComplete={(value: number) =>
-                setRadius(Math.round(value))
-              }
-              minimumTrackTintColor="#1a73e8"
-              maximumTrackTintColor="#000000"
-            />
-          </View>
+              <Text style={styles.radiusText}>Radius: {Math.round(radius)} km</Text>
+              <Slider
+                style={styles.slider}
+                minimumValue={0}
+                maximumValue={100}
+                value={radius}
+                onSlidingComplete={(value: number) => setRadius(Math.round(value))}
+                minimumTrackTintColor="#1a73e8"
+                maximumTrackTintColor="#000000"
+              />
+            </View>
 
-          <Text style={styles.title}>
-            Nearby Facilities ({nearbyFacilities.length})
-          </Text>
-          <ScrollView
-            style={styles.facilitiesList}
-            showsVerticalScrollIndicator={false}>
-            <View style={styles.grid}>
-              {filteredFacilities?.map((facility) => (
-                <TouchableOpacity
-                  key={facility.id}
-                  style={styles.card}
-                  onPress={() => openMaps(facility)}>
-                  <Text style={styles.cardTitle} numberOfLines={1}>
-                    {facility.name}
-                  </Text>
-                  <Text style={styles.cardSubtitle} numberOfLines={1}>
-                    {facility.type}
-                  </Text>
-                  <Text style={styles.cardLocation} numberOfLines={1}>
-                    {facility.location}
-                  </Text>
-                  <TouchableOpacity
-                    onPress={() => Linking.openURL(`tel:${facility.contact}`)}>
-                    <Text style={styles.phone} numberOfLines={1}>
-                      {facility.contact}
+            <Text style={styles.title}>Nearby Facilities ({filteredFacilities.length})</Text>
+            <ScrollView style={styles.facilitiesList} showsVerticalScrollIndicator={false}>
+              <View style={styles.grid}>
+                {filteredFacilities?.map((facility) => (
+                  <View key={facility.id} style={styles.card}>
+                    <Text style={styles.cardTitle} numberOfLines={1}>
+                      {facility.name}
                     </Text>
-                  </TouchableOpacity>
-                  <Text style={styles.cardLocation} numberOfLines={1}>
-                    Distance:{" "}
-                    {(
-                      getDistance(
+                    <Text style={styles.cardSubtitle} numberOfLines={1}>
+                      {facility.type}
+                    </Text>
+                    <Text style={styles.cardLocation} numberOfLines={1}>
+                      {facility.location}
+                    </Text>
+                    
+                    <TouchableOpacity
+                      style={styles.actionButton}
+                      onPress={() => Linking.openURL(`tel:${facility.contact}`)}>
+                      <Phone size={16} color="#0CA554" />
+                      <Text style={styles.actionButtonText}>Call Facility</Text>
+                    </TouchableOpacity>
+                    
+                    <TouchableOpacity
+                      style={[styles.actionButton, styles.directionsButton]}
+                      onPress={() => openMaps(facility)}>
+                      <MapPin size={16} color="#1a73e8" />
+                      <Text style={[styles.actionButtonText, styles.directionsText]}>
+                        Get Directions
+                      </Text>
+                    </TouchableOpacity>
+
+                    <Text style={styles.cardDistance} numberOfLines={1}>
+                      {(getDistance(
                         {
                           latitude: userLocation?.latitude || 0,
                           longitude: userLocation?.longitude || 0
@@ -363,15 +413,14 @@ const Facilities = () => {
                           latitude: parseFloat(facility.latitude),
                           longitude: parseFloat(facility.longitude)
                         }
-                      ) / 1000
-                    ).toFixed(1)}{" "}
-                    km
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </ScrollView>
-        </View>
+                      ) / 1000).toFixed(1)} km away
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            </ScrollView>
+          </View>
+        {/* </PanGestureHandler> */}
       </View>
     </KeyboardAvoidingView>
   );
@@ -450,43 +499,12 @@ const styles = StyleSheet.create({
     shadowRadius: 3.84,
     elevation: 5
   },
-  bottomSheet: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: "white",
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingTop: 12,
-    paddingHorizontal: 16,
-    // marginBottom: Platform.OS === "ios" ? 40 : 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 5,
-    height: height * 0.4 // Fixed height
-  },
-  facilitiesList: {
-    flex: 1,
-    height: "100%"
-  },
   grid: {
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
     gap: 12,
-    marginBottom: 20
-  },
-  card: {
-    width: CARD_WIDTH,
-    padding: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-    minHeight: 120, // Increased height for distance info
-    backgroundColor: "#fff"
+    marginBottom: 80
   },
   bottomSheetHandle: {
     width: 40,
@@ -534,5 +552,67 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#0CA554",
     marginTop: 4
+  },
+  card: {
+    width: CARD_WIDTH,
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    backgroundColor: "#fff",
+    minHeight: 160
+  },
+
+  actionButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+    borderRadius: 6,
+    marginTop: 8,
+    backgroundColor: "#F0FDF4"
+  },
+
+  directionsButton: {
+    backgroundColor: "#EFF6FF"
+  },
+
+  actionButtonText: {
+    marginLeft: 4,
+    fontSize: 12,
+    color: "#0CA554",
+    fontWeight: "500"
+  },
+
+  directionsText: {
+    color: "#1a73e8"
+  },
+
+  cardDistance: {
+    fontSize: 12,
+    color: "#6B7280",
+    marginTop: 8,
+    textAlign: "right"
+  },
+
+  bottomSheet: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: "white",
+    borderTopLeftRadius: 20,
+    height: BOTTOM_SHEET_MIN_HEIGHT,
+    borderTopRightRadius: 20,
+    paddingTop: 12,
+    paddingHorizontal: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 5
+  },
+  facilitiesList: {
+    flexGrow: 1
   }
 });

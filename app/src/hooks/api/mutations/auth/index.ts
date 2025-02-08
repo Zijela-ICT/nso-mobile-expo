@@ -6,3 +6,4 @@ export * from "./useInitiateSignup";
 export * from "./useSignup";
 export * from "./useChangePassword";
 export * from "./useStudentSignup";
+export * from "./useTwoFaRollback";

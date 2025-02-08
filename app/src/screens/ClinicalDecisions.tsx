@@ -17,7 +17,7 @@ import {useFetchProfile} from '@/hooks/api/queries/settings';
 import {Header} from '@/components';
 
 const {width} = Dimensions.get('window');
-const CARD_WIDTH = (width - 48) / 2; // 48 = padding (16) * 2 + gap between cards (16)
+const CARD_WIDTH = (width - 48) / 2;
 
 type HomeNavigationProp = NativeStackNavigationProp<
   HomeStackParamList,
@@ -37,9 +37,7 @@ const categoryStyles = [
 const ClinicalDecisions = () => {
   const {data, isLoading} = useFetchEbookUrl();
   const {isLoading: isLoadingProfile} = useFetchProfile();
-
   const navigation = useNavigation<HomeNavigationProp>();
-
 
   if (isLoading || isLoadingProfile) {
     return (
@@ -49,15 +47,19 @@ const ClinicalDecisions = () => {
     );
   }
 
+  // Filter out content items that don't have subChapters or have empty subChapters
+  const filteredContent = data?.book?.content?.filter(
+    chapter => chapter.subChapters && chapter.subChapters.length > 0
+  );
+
   return (
     <SafeAreaView style={{flex: 1, backgroundColor: '#F8FFFB'}}>
       <Header />
       <ScrollView style={styles.container}>
         <Text style={styles.title}>Sections</Text>
         <View style={styles.grid}>
-          {data?.book?.content?.map((chapter, index) => {
+          {filteredContent?.map((chapter, index) => {
             const style = categoryStyles[index % categoryStyles.length];
-            // const chapterTitle = chapter.chapter.replace('SECTION ', '').split('(')[0].trim();
             const chapterTitle = chapter.chapter;
             const ageRange = chapter.chapter.match(/\((.*?)\)/)?.[1] || '';
 
@@ -108,6 +110,7 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     justifyContent: 'space-between',
     gap: 12,
+    marginBottom: 30,
   },
   card: {
     width: CARD_WIDTH,
@@ -127,7 +130,6 @@ const styles = StyleSheet.create({
     color: '#666',
     marginTop: 4,
   },
-
   headerSection: {
     backgroundColor: '#F8FFFB',
     padding: 16,
@@ -135,13 +137,11 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-
   details: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 10,
   },
-
   profileName: {
     fontSize: 16,
     fontWeight: '500',

@@ -7,38 +7,35 @@ import { QUERYKEYS } from "@/utils/query-keys";
 type ResponseType = {
   status: string;
   message: string;
-  data: {
-    token: string;
-    requirePasswordReset: boolean;
-    roles: string[];
-    otpauth_url?: string;
-    twoFaBackupCode: string;
-  };
+  data: string;
 };
 
 type InputType = {
-  twoFaMethod: "email" | "app";
-  userId?: number;
+  email: string;
+  password: string;
+  backupCode: string;
 };
 
 type ErrorType = { error: string; success: boolean };
 
-const Update2faMethod = (input: InputType): Promise<ResponseType> => {
+const TwoFaRollback = (input: InputType): Promise<ResponseType> => {
   return request(
     "PATCH",
-    `/users/${input.userId}/2fa-auth`,
+    `/auth/2fa_rollback`,
     {
-      twoFaMethod: input.twoFaMethod
+      email: input.email,
+      password: input.password,
+      backupCode: input.backupCode
     },
     true,
     true
   );
 };
 
-const useUpdate2faMethod = () => {
+const useTwoFaRollback = () => {
   const queryClient = useQueryClient();
   return useMutation<ResponseType, AxiosError<ErrorType>, InputType>(
-    (input: InputType) => Update2faMethod(input),
+    (input: InputType) => TwoFaRollback(input),
     {
       onSuccess: () => {
         queryClient.invalidateQueries({
@@ -49,4 +46,4 @@ const useUpdate2faMethod = () => {
   );
 };
 
-export { useUpdate2faMethod };
+export { useTwoFaRollback };
