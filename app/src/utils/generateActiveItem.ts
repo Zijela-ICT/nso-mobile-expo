@@ -1,4 +1,4 @@
-export const generateActiveItem = ({
+const generateActiveItem = ({
   chapterId,
   subChapterId,
   pageId,
@@ -11,3 +11,5 @@ export const generateActiveItem = ({
     subChapterId !== undefined ? subChapterId : 'undefined'
   }-${pageId !== undefined ? pageId : 'undefined'}`;
 };
+
+export default generateActiveItem

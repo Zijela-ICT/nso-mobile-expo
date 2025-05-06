@@ -20,6 +20,7 @@ const flattenPages = (chapters: Chapter[]): FlattenedPage[] => {
 
       // Add sub-chapter-level pages
       subChapter.pages?.forEach((page) => {
+        
         if (!page || !page.items || page.items.length === 0) return; // Skip invalid or empty pages
         pages.push({
           content: page.items,

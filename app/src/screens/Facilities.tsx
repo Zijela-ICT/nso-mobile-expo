@@ -302,7 +302,7 @@ const Facilities = () => {
               minimumValue={0}
               maximumValue={100}
               value={radius}
-              onValueChange={setRadius}
+              // onValueChange={setRadius}
               onSlidingComplete={(value: number) =>
                 setRadius(Math.round(value))
               }

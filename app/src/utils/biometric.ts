@@ -1,7 +1,7 @@
 import * as LocalAuthentication from "expo-local-authentication";
 import * as SecureStore from "expo-secure-store";
 
-export class BiometricService {
+export default class BiometricService {
   static async createKeys(): Promise<boolean> {
     try {
       const isAvailable = await this.isBiometricAvailable();

@@ -11,3 +11,5 @@ export const showToast = (
     position,
   });
 };
+
+export default showToast

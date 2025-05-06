@@ -8,7 +8,7 @@ interface TableRendererProps {
   highlightText: (text: string, query: string, textStyle?: object) => JSX.Element;
 }
 
-const TableRenderer: React.FC<TableRendererProps> = ({ table, searchQuery, highlightText}) => {
+const TableRenderer: React.FC<TableRendererProps> = ({ table, searchQuery, highlightText }) => {
   const renderCellContent = (cell: ContentItem, textStyle?: object) => {
     if ('content' in cell && typeof cell.content === 'string') {
       return <Text>{highlightText(cell.content, searchQuery, textStyle)}</Text>;
@@ -46,7 +46,7 @@ const TableRenderer: React.FC<TableRendererProps> = ({ table, searchQuery, highl
       {table.title && <Text style={styles.tableTitle}>{table.title}</Text>}
 
       {/* Render Table Headers */}
-      {table.headers && (
+      {table.headless && table.headers && table.headers.length > 0 && (
         <View style={styles.tableRow}>
           {table.headers[0].map((header, headerIndex) =>
             'content' in header && typeof header.content === 'string' ? (
@@ -67,23 +67,25 @@ const TableRenderer: React.FC<TableRendererProps> = ({ table, searchQuery, highl
       )}
 
       {/* Render Table Rows */}
-      {table.rows.map((row, rowIndex) => (
-        <View key={rowIndex} style={styles.tableRow}>
-          {row.map((cell, cellIndex) => (
-            <View
-              key={cellIndex}
-              style={[
-                styles.tableCell,
-                cell.cellStyle, // Apply cell-specific styles (background, padding, etc.)
-              ]}
-            >
-              <Text>
-                {renderCellContent(cell)}
-              </Text>
-            </View>
-          ))}
-        </View>
-      ))}
+      {Array.isArray(table.rows) && table.rows.length > 0 && (
+        table.rows.map((row, rowIndex) => (
+          <View key={rowIndex} style={styles.tableRow}>
+            {row.map((cell, cellIndex) => (
+              <View
+                key={cellIndex}
+                style={[
+                  styles.tableCell,
+                  cell.cellStyle, // Apply cell-specific styles (background, padding, etc.)
+                ]}
+              >
+                <Text>
+                  {renderCellContent(cell)}
+                </Text>
+              </View>
+            ))}
+          </View>
+        ))
+      )}
     </View>
   );
 };

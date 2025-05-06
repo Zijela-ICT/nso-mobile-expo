@@ -9,7 +9,7 @@ export interface FlattenedPage extends Page {
   marker: number;
 }
 
-export function flatten(chapters: Chapter[]) {
+export default function flatten(chapters: Chapter[]) {
   let flattenedPages: FlattenedPage[] = [];
   let marker = 0;
   chapters.forEach((chapter, chapterIndex) => {

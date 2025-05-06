@@ -18,7 +18,7 @@ import {
   Heading,
 } from '../../../types/book.types';
 
-export function isTextContent(obj: any): obj is Text {
+export default function isTextContent(obj: any): obj is Text {
   return (
     obj &&
     typeof obj === 'object' &&
