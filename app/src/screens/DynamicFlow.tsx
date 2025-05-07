@@ -1042,7 +1042,7 @@ const styles = StyleSheet.create({
   historyQuestion: {
     flex: 1,
     fontSize: 16,
-    color: "#101828"
+    color: "#101828",
   },
   examinationContainer: {
     padding: 16,

@@ -6,13 +6,15 @@
     "orientation": "portrait",
     "icon": "./assets/images/app-icon.png",
     "scheme": "chprbn",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.zijela.chprbn"
+      "bundleIdentifier": "com.zijela.chprbn",
+      "userInterfaceStyle": "light"
     },
     "android": {
+      "userInterfaceStyle": "light",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/android-icon.png",
         "backgroundColor": "#ffffff"
