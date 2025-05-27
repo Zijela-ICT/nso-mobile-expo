@@ -39,7 +39,6 @@ const ClinicalDecisions = () => {
   const {isLoading: isLoadingProfile} = useFetchProfile();
   const navigation = useNavigation<HomeNavigationProp>();
 
-  console.log("e book", data?.book?.content);
 
   if (isLoading || isLoadingProfile) {
     return (
