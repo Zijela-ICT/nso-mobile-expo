@@ -573,9 +573,9 @@ const DynamicFlow = ({ route }: DynamicFlowProps) => {
     }
 
     const findingsOnExamination =
-      currentItem.findingsOnExamination ||
+      currentItem.examinationsActions ||
       currentItem.pages[0]?.items?.find((item) => item.type === "decision")
-        ?.findingsOnExamination;
+        ?.examinationsActions;
 
     if (!findingsOnExamination) {
       return null;
