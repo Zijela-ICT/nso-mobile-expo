@@ -19,7 +19,9 @@
         "foregroundImage": "./assets/images/android-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "additionalRepositories": ["https://www.jitpack.io"],
+      "additionalRepositories": [
+        "https://www.jitpack.io"
+      ],
       "permissions": [],
       "package": "com.zijela.chprbn"
     },
@@ -40,7 +42,8 @@
         }
       ],
       "react-native-video",
-      "expo-secure-store"
+      "expo-secure-store",
+      "expo-font"
     ],
     "experiments": {
       "typedRoutes": true

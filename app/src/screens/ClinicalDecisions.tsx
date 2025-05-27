@@ -39,6 +39,7 @@ const ClinicalDecisions = () => {
   const {isLoading: isLoadingProfile} = useFetchProfile();
   const navigation = useNavigation<HomeNavigationProp>();
 
+
   if (isLoading || isLoadingProfile) {
     return (
       <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
